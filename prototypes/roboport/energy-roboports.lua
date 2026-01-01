@@ -46,6 +46,11 @@ local energy_roboport_recipe = {
 
 
 -- Helper function to create a roboport variant
+---@param base_item data.ItemPrototype
+---@param base_entity data.RoboportPrototype
+---@param e integer Efficiency level
+---@param p integer Productivity level
+---@param s integer Speed level
 local function create_energy_roboport_variant(base_item, base_entity, e, p, s)
     local roboport_item = table.deepcopy(base_item)
     local roboport_entity = table.deepcopy(base_entity)
