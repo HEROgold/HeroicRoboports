@@ -1,21 +1,20 @@
 {
-    "name": "empty-mod-template",
-    "title": "Mod Template",
-    "version": "0.0.0",
-    "factorio_version": "2.0",
+    "name": "heroic-roboports",
+    "version": "1.3.0",
+    "title": "Heroic Roboports",
     "author": "HEROgold",
-    "contact": "",
-    "homepage": "https://discord.gg/qPe4wtHuJR",
-    "description": "Mod description",
-    "package": {},
+    "factorio_version": "2.0",
     "dependencies": [
-        "base >= 0.0"
+        "base >= 2.0",
+        "heroic-library >= 1.3.0",
+        "? space-age",
+        "? space-exploration",
+        "? modules-t4",
+        "? bobmodules",
+        "? Module-Rebalance",
+        "? chunk-sized-roboports",
+        "? secretas"
     ],
-    "auto-enable": true,
-    "expansion_shaders_required": false,
-    "freezing_required": false,
-    "rail_bridges_required": false,
-    "segmented_units_required": false,
-    "space_travel_required": false,
-    "spoiling_required": false
+    "homepage": "https://discord.gg/qPe4wtHuJR",
+    "description": "A  mod that adds upgradable research for two new roboports!\nEvery 'tier' or upgrade adds the same value, Vanilla is 100%, level 2 would be 200%, and level 3 300%, level 4 is 400%.\nThe mod is balanced around your module research, and works for SA"
 }

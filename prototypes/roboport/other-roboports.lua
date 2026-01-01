@@ -1,0 +1,6 @@
+--- TODO: Combine energy and storage roboports
+--- in such a way that i could reference base roboports of other mods (ie. krastorio)
+--- and it would automatically generate new upgraded versions of those roboports
+--- I might want to rewrite this mod to be more modular. And release it as version 3.
+--- 
+--- 1 new setting, to combine the 2 or have them split (Default) (just like how it behaves now)

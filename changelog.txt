@@ -1,0 +1,14 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 2025-01-01
+  Changes:
+    - Locale is now properly set up.
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-01-01
+  Notes:
+    - Re-upload of the mod, and a new version number to reflect the changes.
+    - The older version had some naming issues.
+    - This new mod is now a dependency for the old mod. for automatic migration.
+  Changes:
+    - Big changes to the codebase, to make more use of the library mod.
