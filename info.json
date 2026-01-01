@@ -1,0 +1,21 @@
+{
+    "name": "empty-mod-template",
+    "title": "Mod Template",
+    "version": "0.0.0",
+    "factorio_version": "2.0",
+    "author": "HEROgold",
+    "contact": "",
+    "homepage": "https://discord.gg/qPe4wtHuJR",
+    "description": "Mod description",
+    "package": {},
+    "dependencies": [
+        "base >= 0.0"
+    ],
+    "auto-enable": true,
+    "expansion_shaders_required": false,
+    "freezing_required": false,
+    "rail_bridges_required": false,
+    "segmented_units_required": false,
+    "space_travel_required": false,
+    "spoiling_required": false
+}
