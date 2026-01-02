@@ -1,27 +1,26 @@
 import os
 import shutil
-from pathlib import Path
 
-from .create_release import main as release
+from create_release import main as release
 
 
-def main():
+def main() -> None:
     """
-    Creates release's for the each mod found, and copies them to the player's mod folder
+    Creates release's for the current mod, and copies them to the player's mod folder
     """
-    release() # Also runs the create_releases file.
-    for entry in (Path(__file__).parent / "releases").iterdir():
+    entry = release() # Also runs the create_releases file.
 
-        mod_path = f"{os.getenv("APPDATA")}/factorio/mods/{entry.name}"
+    mod_path = f"{os.getenv("APPDATA")}/factorio/mods/{entry.name}"
 
-        try:
-            os.remove(mod_path)
-        except (FileNotFoundError, PermissionError):
-            pass
+    try:
+        os.remove(mod_path)
+    except (FileNotFoundError, PermissionError):
+        pass
 
-        shutil.copy(entry, mod_path)
+    shutil.copy(entry, mod_path)
+    print(f"Copied {entry.name} to mods.")
 
 
 
 if __name__ == "__main__":
-    print(main())
+    main()
