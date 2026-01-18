@@ -1,9 +1,7 @@
 require("__heroic-library__.utilities")
-require("__heroic-library__.vars.words")
-require("__heroic-library__.vars.strings")
+
+
 require("__heroic-library__.entities")
-require("vars.settings")
-require("vars.strings")
 require("script.commands")
 require("helpers.levels")
 require("helpers.suffix")
@@ -31,7 +29,7 @@ local function validate_roboport(roboport)
 	if roboport_name == Roboport then
 		-- The entity is from vanilla Factorio
 		return true
-	elseif utilities.string_starts_with(roboport_name, RoboportEnergyLeveled) then
+	elseif utilities.string_starts_with(roboport_name, "energy-roboport-mk-") then
 		local port_levels = energy_levels_from_name(roboport_name)
 		---@diagnostic disable-next-line: param-type-mismatch
 		local tech_levels = get_energy_levels(roboport.force)
@@ -43,7 +41,7 @@ local function validate_roboport(roboport)
 		) then
 			return true
 		end
-	elseif utilities.string_starts_with(roboport_name, RoboportLogisticalLeveled) then 
+	elseif utilities.string_starts_with(roboport_name, "logistical-roboport-mk-") then 
 		local port_levels = storage_levels_from_name(roboport_name)
 		---@diagnostic disable-next-line: param-type-mismatch
 		local tech_levels = get_logistical_levels(roboport.force)
@@ -57,7 +55,7 @@ local function validate_roboport(roboport)
 		end
 	elseif utilities.string_starts_with(roboport_name, RoboportEnergy) then
 		return true
-	elseif utilities.string_starts_with(roboport_name, RoboportLogistical) then
+	elseif utilities.string_starts_with(roboport_name, "logistical-roboport") then
 		return true
 	else
 		return false
@@ -73,8 +71,8 @@ local function validate_ghost(ghost)
 	end
 	if (
 		not ghost.valid
-		or not utilities.string_starts_with(ghost.ghost_name, RoboportEnergyLeveled)
-		and not utilities.string_starts_with(ghost.ghost_name, RoboportLogisticalLeveled)
+		or not utilities.string_starts_with(ghost.ghost_name, "energy-roboport-mk-")
+		and not utilities.string_starts_with(ghost.ghost_name, "logistical-roboport-mk-")
 	) then
 		storage.ghosts_to_update[ghost] = nil
 		return false
@@ -93,7 +91,7 @@ local function update_energy_roboport_level(roboport)
 	)
 
 	local created_rport = surface.create_entity{
-		name = combine{RoboportEnergyLeveled, suffix},
+		name = "energy-roboport-mk-" .. suffix,
 		position = roboport.position,
 		force = roboport.force,
 		fast_replace = true,
@@ -120,7 +118,7 @@ local function update_storage_roboport_level(roboport)
 	)
 
 	local created_rport = surface.create_entity{
-		name = combine{RoboportLogisticalLeveled, storage_suffix},
+		name = "logistical-roboport-mk-" .. storage_suffix,
 		position = roboport.position,
 		force = roboport.force,
 		fast_replace = true,
@@ -145,11 +143,11 @@ local function update_ghost_level(roboport)
 
 	local to_create = {}
 
-	if utilities.string_starts_with(roboport.ghost_name, RoboportLogisticalLeveled) then
+	if utilities.string_starts_with(roboport.ghost_name, "logistical-roboport-mk-") then
 		to_create = {
 			name = EntityGhost,
 			type = EntityGhost,
-			ghost_name = RoboportLogistical,
+			ghost_name = "logistical-roboport",
 			ghost_ype = Roboport,
 			ghost_prototype = Roboport,
 			position = roboport.position,
@@ -188,7 +186,7 @@ end
 local function update_roboport_level(roboport)
 	if not validate_roboport(roboport) then return end
 
-	if utilities.string_starts_with(roboport.name, RoboportLogistical) then
+	if utilities.string_starts_with(roboport.name, "logistical-roboport") then
 		update_storage_roboport_level(roboport)
 	elseif utilities.string_starts_with(roboport.name, RoboportEnergy) then
 		update_energy_roboport_level(roboport)

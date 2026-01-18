@@ -1,4 +1,4 @@
-require("vars.strings")
+
 
 ---@type data.SelectionToolPrototype
 local item = {

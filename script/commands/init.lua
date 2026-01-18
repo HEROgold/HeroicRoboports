@@ -1,4 +1,4 @@
-require("vars.strings")
+
 require("__heroic-library__.technology")
 
 function uninstall()
@@ -13,7 +13,7 @@ function uninstall()
             if (
                     roboport.name == Roboport
                     or not utilities.string_starts_with(roboport.name, RoboportEnergy)
-                    and not utilities.string_starts_with(roboport.name, RoboportLogistical)
+                    and not utilities.string_starts_with(roboport.name, "logistical-roboport")
                 ) then
                 goto continue
             end
@@ -75,10 +75,10 @@ function reset()
                 }
                 created_rport.energy = old_energy
                 roboport.destroy()
-            elseif utilities.string_starts_with(roboport.name, RoboportLogistical) then
+            elseif utilities.string_starts_with(roboport.name, "logistical-roboport") then
                 local old_energy = roboport.energy
                 local created_rport = surface.create_entity {
-                    name = RoboportLogistical,
+                    name = "logistical-roboport",
                     position = roboport.position,
                     force = roboport.force,
                     fast_replace = true,

@@ -1,22 +1,20 @@
-require("__heroic-library__.vars.words")
+
 local Energy = require("__heroic-library__.energy")
-require("vars.settings")
-require("vars.strings")
 require("helpers.suffix")
 require("helpers.charging_offset")
 
-local base_roboport_entity = data.raw[Roboport][Roboport]
-local base_roboport_item = data.raw[Item][Roboport]
+local base_roboport_entity = data.raw["roboport"]["roboport"]
+local base_roboport_item = data.raw["item"]["roboport"]
 
-local efficiency_limit = math.max(Limits[Efficiency], research_minimum)
-local productivity_limit = math.max(Limits[Productivity], research_minimum)
-local speed_limit = math.max(Limits[Speed], research_minimum)
+local efficiency_limit = math.max(Limits["efficiency"], research_minimum)
+local productivity_limit = math.max(Limits["productivity"], research_minimum)
+local speed_limit = math.max(Limits["speed"], research_minimum)
 
 local energy_roboport_entity = table.deepcopy(base_roboport_entity)
 local energy_roboport_item = table.deepcopy(base_roboport_item)
 
-energy_roboport_item.name = RoboportEnergy
-energy_roboport_entity.name = RoboportEnergy
+energy_roboport_item.name = "energy-roboport"
+energy_roboport_entity.name = "energy-roboport"
 
 energy_roboport_item.place_result = energy_roboport_entity.name
 energy_roboport_entity.minable.result = energy_roboport_item.name
@@ -31,15 +29,15 @@ energy_roboport_entity.construction_radius = base_roboport_entity.construction_r
 ---@type data.RecipePrototype
 local energy_roboport_recipe = {
     type = "recipe",
-    name = RoboportEnergy,
+    name = "energy-roboport",
     enabled = false,
     ---@type data.IngredientPrototype[]
     ingredients = {
-        {type = Item, name =Roboport, amount = 1},
-        {type = Item, name ="steel-plate", amount = 100},
+        {type = "item", name =Roboport, amount = 1},
+        {type = "item", name ="steel-plate", amount = 100},
     },
     ---@type data.ItemProductPrototype[]
-    results = {{type = Item, name = energy_roboport_item.name, amount = 1},},
+    results = {{type = "item", name = energy_roboport_item.name, amount = 1},},
     category = "crafting",
     unlock_results = true,
 }
@@ -56,16 +54,16 @@ local function create_energy_roboport_variant(base_item, base_entity, e, p, s)
     local roboport_entity = table.deepcopy(base_entity)
 
     local suffix = get_energy_suffix(e, p, s)
-    local name = combine{RoboportEnergyLeveled, suffix}
+    local name = "energy-roboport-mk-" .. suffix
 
-    roboport_entity.localised_name = {"entity-name." .. RoboportEnergyLeveled, tostring(e), tostring(p), tostring(s)}
-    roboport_item.localised_name = {"item-name." .. RoboportEnergyLeveled, tostring(e), tostring(p), tostring(s)}
+    roboport_entity.localised_name = {"entity-name.energy-roboport-mk-", tostring(e), tostring(p), tostring(s)}
+    roboport_item.localised_name = {"item-name.energy-roboport-mk-", tostring(e), tostring(p), tostring(s)}
 
     roboport_item.name = name
     roboport_entity.name = name
     roboport_item.hidden = true
     roboport_item.place_result = roboport_entity.name
-    roboport_entity.fast_replaceable_group = RoboportEnergy
+    roboport_entity.fast_replaceable_group = "energy-roboport"
 
     -- Pre-calculate base values to avoid repeated string parsing
     local energy_source_e = Energy.new(base_entity.energy_source["input_flow_limit"])
@@ -113,7 +111,6 @@ end
 
 local function create_roboports()
     local to_add = {}
-    local show_items = settings.startup[ShowItems].value
 
     for e=0, efficiency_limit do
         for p=0, productivity_limit do
@@ -122,8 +119,8 @@ local function create_roboports()
                     energy_roboport_item, energy_roboport_entity, e, p, s
                 )
 
-                if show_items then
-                    roboport_item.subgroup = ItemSubGroupRoboport
+                if show_items:get() then
+                    roboport_item.subgroup = "item-sub-group-roboport"
                     table.insert(to_add, roboport_item)
                 end
                 table.insert(to_add, roboport_entity)

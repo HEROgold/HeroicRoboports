@@ -1,57 +1,56 @@
-require("vars.strings")
 
 ---@type table<LuaSettings>
 local energy_roboport_settings = {
 	{
 		type = "double-setting",
-		name = InputFlowLimitModifier,
+		name = "input-flow-limit-modifier",
 		setting_type = "startup",
 		minimum_value = 0.1,
 		default_value = 1,
 	},
 	{
 		type = "double-setting",
-		name = BufferCapacityModifier,
+		name = "buffer-capacity-modifier",
 		setting_type = "startup",
 		minimum_value = 0.1,
 		default_value = 1,
 	},
 	{
 		type = "double-setting",
-		name = RechargeMinimumModifier,
+		name = "recharge-minimum-modifier",
 		setting_type = "startup",
 		minimum_value = 0.1,
 		default_value = 1,
 	},
 	{
 		type = "double-setting",
-		name = EnergyUsageModifier,
+		name = "energy-usage-modifier",
 		setting_type = "startup",
 		minimum_value = 0.1,
 		default_value = 1,
 	},
 	{
 		type = "double-setting",
-		name = ChargingEnergyModifier,
+		name = "charging-energy-modifier",
 		setting_type = "startup",
 		minimum_value = 0.1,
 		default_value = 1,
 	},
 	{
 		type = "int-setting",
-		name = EnergySpeedLimit,
+		name = "energy-speed-limit",
 		setting_type = "startup",
 		default_value = 9,
 		maximum_value = 90
 	},{
 		type = "int-setting",
-		name = EnergyProductivityLimit,
+		name = "energy-productivity-limit",
 		setting_type = "startup",
 		default_value = 9,
 		maximum_value = 90
 	},{
 		type = "int-setting",
-		name = EnergyEfficiencyLimit,
+		name = "energy-efficiency-limit",
 		setting_type = "startup",
 		default_value = 9,
 		maximum_value = 90
@@ -61,7 +60,7 @@ local energy_roboport_settings = {
 local logistical_roboport_settings = {
 	{
 		type = "int-setting",
-		name = ConstructionAreaLimit,
+		name = "construction-area-limit",
 		setting_type = "startup",
 		default_value = 3,
 		minimum_value = 1,
@@ -69,7 +68,7 @@ local logistical_roboport_settings = {
 	},
 	{
 		type = "int-setting",
-		name = LogisticAreaLimit,
+		name = "logistic-area-limit",
 		setting_type = "startup",
 		default_value = 3,
 		minimum_value = 1,
@@ -77,7 +76,7 @@ local logistical_roboport_settings = {
 	},
 	{
 		type = "int-setting",
-		name = RobotStorageLimit,
+		name = "robot-storage-limit",
 		setting_type = "startup",
 		default_value = 3,
 		minimum_value = 1,
@@ -85,7 +84,7 @@ local logistical_roboport_settings = {
 	},
 	{
 		type = "int-setting",
-		name = MaterialStorageLimit,
+		name = "material-storage-limit",
 		setting_type = "startup",
 		default_value = 3,
 		minimum_value = 1,
@@ -96,7 +95,7 @@ local logistical_roboport_settings = {
 local research_settings = {
 	{
 		type = "int-setting",
-		name = ResearchMinimum,
+		name = "research-minimum",
 		setting_type = "startup",
 		default_value = 3,
 		maximum_value = 90
@@ -104,7 +103,7 @@ local research_settings = {
 	},
 	{
 		type = "int-setting",
-		name = ResearchMaximum,
+		name = "research-maximum",
 		setting_type = "startup",
 		default_value = 9,
 		maximum_value = 90
@@ -112,14 +111,14 @@ local research_settings = {
 	},
 	{
 		type = "int-setting",
-		name = RoboportResearchUpgradeCost,
+		name = "roboport-research-upgrade-cost",
 		setting_type = "startup",
 		default_value = 500,
 		minimum_value = 1,
 	},
 	{
 		type = "int-setting",
-		name = RoboportResearchUpgradeTime,
+		name = "roboport-research-upgrade-time",
 		setting_type = "startup",
 		default_value = 60,
 		minimum_value = 1,
@@ -129,14 +128,14 @@ local research_settings = {
 local mod_settings = {
 	{
 		type = "int-setting",
-		name = UpgradeTimer,
+		name = "upgrade-timer",
 		setting_type = "startup",
 		minimum_value = 1,
 		default_value = 8
 	},
 	{
 		type = "bool-setting",
-		name = ShowItems,
+		name = "show-items",
 		setting_type = "startup",
 		default_value = true
 	},

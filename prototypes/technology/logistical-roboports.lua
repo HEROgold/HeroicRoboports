@@ -1,6 +1,5 @@
 require("__heroic-library__.utilities")
 require("__heroic-library__.table")
-require("vars.settings")
 
 local robot_storage_limit = math.max(robot_storage_limit, research_minimum)
 local material_storage_limit = math.max(material_storage_limit, research_minimum)
@@ -130,7 +129,7 @@ end
 local function insert_unlock()
   table.insert(
     data.raw["technology"]["logistic-robotics"].effects,
-    {type = "unlock-recipe", recipe = RoboportLogistical}
+    {type = "unlock-recipe", recipe = "logistical-roboport"}
   )
 end
 

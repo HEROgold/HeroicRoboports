@@ -1,23 +1,22 @@
-require("__heroic-library__.vars.words")
+
 local Energy = require("__heroic-library__.energy")
-require("vars.settings")
-require("vars.strings")
 require("helpers.suffix")
 require("helpers.charging_offset")
 
-local base_roboport_entity = data.raw[Roboport][Roboport]
-local base_roboport_item = data.raw[Item][Roboport]
+local base_roboport_entity = data.raw["roboport"]["roboport"]
+local base_roboport_item = data.raw["item"]["roboport"]
 
-local robot_storage_limit = math.max(robot_storage_limit, research_minimum)
-local material_storage_limit = math.max(material_storage_limit, research_minimum)
-local construction_area_limit = math.max(construction_area_limit, research_minimum)
-local logistic_area_limit = math.max(logistic_area_limit, research_minimum)
+local minimum = research_minimum:get()
+local robot_storage_limit = math.max(robot_storage_limit:get(), minimum)
+local material_storage_limit = math.max(material_storage_limit:get(), minimum)
+local construction_area_limit = math.max(construction_area_limit:get(), minimum)
+local logistic_area_limit = math.max(logistic_area_limit:get(), minimum)
 local logistical_roboport_entity = table.deepcopy(base_roboport_entity)
 local logistical_roboport_item = table.deepcopy(base_roboport_item)
 
 
-logistical_roboport_item.name = RoboportLogistical
-logistical_roboport_entity.name = RoboportLogistical
+logistical_roboport_item.name = "logistical-roboport"
+logistical_roboport_entity.name = "logistical-roboport"
 
 logistical_roboport_item.place_result = logistical_roboport_entity.name
 -- logistical_roboport_item.hidden = false
@@ -46,15 +45,15 @@ logistical_roboport_entity.material_slots_count = 10 -- TODO: Move these values 
 ---@type data.RecipePrototype
 local storage_roboport_recipe = {
     type = "recipe",
-    name = RoboportLogistical,
+    name = "logistical-roboport",
     enabled = false,
     ---@type data.IngredientPrototype[]
     ingredients = {
-        {type = Item, name =Roboport, amount = 1},
-        {type = Item, name ="steel-plate", amount = 100},
+        {type = "item", name = "roboport", amount = 1},
+        {type = "item", name ="steel-plate", amount = 100},
     },
     ---@type data.ItemProductPrototype[]
-    results = {{type = Item, name = logistical_roboport_entity.name, amount = 1},},
+    results = {{type = "item", name = logistical_roboport_entity.name, amount = 1},},
     category = "crafting",
     unlock_results = true,
 }
@@ -73,15 +72,15 @@ local function create_logistical_roboport_variant(base_item, base_entity, c, l, 
     local roboport_entity = table.deepcopy(base_entity)
 
     local suffix = get_storage_suffix(c, l, r, m)
-    local name = combine{RoboportLogisticalLeveled, suffix}
+    local name = "logistical-roboport-mk-" .. suffix
 
-    roboport_entity.localised_name = {"entity-name." .. RoboportLogisticalLeveled, tostring(c), tostring(l), tostring(r), tostring(m)}
-    roboport_item.localised_name = {"item-name." .. RoboportLogisticalLeveled, tostring(c), tostring(l), tostring(r), tostring(m)}
+    roboport_entity.localised_name = {"entity-name.logistical-roboport-mk-", tostring(c), tostring(l), tostring(r), tostring(m)}
+    roboport_item.localised_name = {"item-name.logistical-roboport-mk-", tostring(c), tostring(l), tostring(r), tostring(m)}
 
     roboport_item.name = name
     roboport_entity.name = name
     roboport_item.place_result = roboport_entity.name
-    roboport_entity.fast_replaceable_group = RoboportLogistical
+    roboport_entity.fast_replaceable_group = "logistical-roboport"
     roboport_item.hidden = true
 
     -- Pre-calculate base values to avoid repeated access
@@ -102,7 +101,6 @@ end
 
 local function create_roboports()
     local to_add = {}
-    local show_items = settings.startup[ShowItems].value
 
     for c=0, construction_area_limit do 
         for l=0, logistic_area_limit do
@@ -112,8 +110,8 @@ local function create_roboports()
                         logistical_roboport_item, logistical_roboport_entity, c, l, r, m
                     )
 
-                    if show_items then
-                        roboport_item.subgroup = ItemSubGroupRoboport
+                    if show_items:get() then
+                        roboport_item.subgroup = "item-sub-group-roboport"
                         table.insert(to_add, roboport_item)
                     end
 

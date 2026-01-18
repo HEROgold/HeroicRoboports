@@ -1,4 +1,4 @@
-require("vars.settings")
+
 require("__heroic-library__.number")
 
 ---@param efficiency_level integer
