@@ -4,10 +4,10 @@
 function get_logistical_levels(force)
     levels = {0, 0, 0, 0}
     for i, name in ipairs{
-        RoboportConstructionArea,
-        RoboportLogisticArea,
-        RoboportRobotStorage,
-        RoboportMaterialStorage
+        "roboport-construction-area",
+        "roboport-logistic-area",
+        "roboport-robot-storage",
+        "roboport-material-storage"
     } do
         for level = 1, research_minimum, 1 do
             local tech_level = get_tech_level(force, name, level)
@@ -24,9 +24,9 @@ end
 function get_energy_levels(force)
     local levels = {0, 0, 0}
     for i, name in ipairs{
-        RoboportEfficiency,
-        RoboportProductivity,
-        RoboportSpeed
+        "roboport-efficiency",
+        "roboport-productivity",
+        "roboport-speed"
     } do
         for level = 1, research_minimum, 1 do
             local tech_level = get_tech_level(force, name, level)

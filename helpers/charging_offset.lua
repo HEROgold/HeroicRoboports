@@ -23,3 +23,7 @@ function generate_charging_offsets(n)
     charging_offsets_cache[n] = offsets
     return offsets
 end
+
+return {
+    generate_charging_offsets = generate_charging_offsets
+}

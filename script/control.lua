@@ -1,7 +1,7 @@
 require("__heroic-library__.utilities")
 
 
-require("__heroic-library__.entities")
+local entities = require("__heroic-library__.entities")
 require("script.commands")
 require("helpers.levels")
 require("helpers.suffix")
@@ -26,7 +26,7 @@ local function validate_roboport(roboport)
 	end
 
 	local roboport_name = roboport.name
-	if roboport_name == Roboport then
+	if roboport_name == "roboport" then
 		-- The entity is from vanilla Factorio
 		return true
 	elseif utilities.string_starts_with(roboport_name, "energy-roboport-mk-") then
@@ -53,7 +53,7 @@ local function validate_roboport(roboport)
 		) then
 			return true
 		end
-	elseif utilities.string_starts_with(roboport_name, RoboportEnergy) then
+	elseif utilities.string_starts_with(roboport_name, "roboport-energy") then
 		return true
 	elseif utilities.string_starts_with(roboport_name, "logistical-roboport") then
 		return true
@@ -148,8 +148,8 @@ local function update_ghost_level(roboport)
 			name = EntityGhost,
 			type = EntityGhost,
 			ghost_name = "logistical-roboport",
-			ghost_ype = Roboport,
-			ghost_prototype = Roboport,
+			ghost_ype = "roboport",
+			ghost_prototype = "roboport",
 			position = roboport.position,
 			force = roboport.force,
 			fast_replace = true,
@@ -163,8 +163,8 @@ local function update_ghost_level(roboport)
 			name = EntityGhost,
 			type = EntityGhost,
 			ghost_name = RoboportEnergy,
-			ghost_type = Roboport,
-			ghost_prototype = Roboport,
+			ghost_type = "roboport",
+			ghost_prototype = "roboport",
 			position = roboport.position,
 			force = roboport.force,
 			fast_replace = true,
@@ -221,7 +221,7 @@ end
 local function mark_all_roboports_for_update(force)
 	for _, surface in pairs(game.surfaces) do
 		for _, roboport in pairs(surface.find_entities_filtered{
-			type = Roboport,
+			type = "roboport",
 			force = force
 		}) do
 			update_roboport_level(roboport)
@@ -252,7 +252,7 @@ script.on_event(defines.events.on_research_reversed,
 local function on_built(entity)
 	if entities.is_ghost(entity) and validate_ghost(entity) then
 		update_ghost_level(entity)
-	elseif entity.type == Roboport and validate_roboport(entity) then
+	elseif entity.type == "roboport" and validate_roboport(entity) then
 		update_roboport_level(entity)
 	end
 end

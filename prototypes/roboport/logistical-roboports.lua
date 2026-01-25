@@ -1,121 +1,125 @@
-
 local Energy = require("__heroic-library__.energy")
-require("helpers.suffix")
-require("helpers.charging_offset")
-
-local base_roboport_entity = data.raw["roboport"]["roboport"]
-local base_roboport_item = data.raw["item"]["roboport"]
-
-local minimum = research_minimum:get()
-local robot_storage_limit = math.max(robot_storage_limit:get(), minimum)
-local material_storage_limit = math.max(material_storage_limit:get(), minimum)
-local construction_area_limit = math.max(construction_area_limit:get(), minimum)
-local logistic_area_limit = math.max(logistic_area_limit:get(), minimum)
-local logistical_roboport_entity = table.deepcopy(base_roboport_entity)
-local logistical_roboport_item = table.deepcopy(base_roboport_item)
+local BaseRoboport = require("prototypes.roboport.base")
+local offsets = require("helpers.charging_offset")
+local settings = require("settings")
 
 
-logistical_roboport_item.name = "logistical-roboport"
-logistical_roboport_entity.name = "logistical-roboport"
+---@class LogisticalRoboport: BaseRoboport
+---@field levels table<string, integer>
+local LogisticalRoboport = setmetatable({}, { __index = BaseRoboport })
+LogisticalRoboport.__index = LogisticalRoboport
 
-logistical_roboport_item.place_result = logistical_roboport_entity.name
--- logistical_roboport_item.hidden = false
+---@class LogisticalLevels
+---@field construction_area integer
+---@field logistic_area integer
+---@field robot_storage integer
+---@field material_storage integer
 
-logistical_roboport_entity.minable.result = logistical_roboport_item.name
+---@return self
+---@param levels LogisticalLevels | nil
+function LogisticalRoboport.new(levels)
+    local self = setmetatable(BaseRoboport.new(), LogisticalRoboport) --[[@as LogisticalRoboport]]
+    self.name = "logistical-roboport"
+    self.levels = levels or {
+        construction_area = 0,
+        logistic_area = 0,
+        robot_storage = 0,
+        material_storage = 0,
+    }
 
--- Nerf energy usage as tradeoff. Half as effective at charging than the normal roboport.
-local recharge_minimum = Energy.new(logistical_roboport_entity.recharge_minimum)
-local energy_usage = Energy.new(logistical_roboport_entity.energy_usage)
-local charging_energy = Energy.new(logistical_roboport_entity.charging_energy)
+    -- Buff roboport storage and radius as benefit.
+    self.logistics_radius =
+        settings.logistical_logistics_radius:get()
+        + (settings.logistical_logistics_radius_modifier:get()
+            * self.levels.logistic_area)
+    self.construction_radius =
+        settings.logistical_construction_radius:get()
+        + (settings.logistical_construction_radius_modifier:get()
+            * self.levels.construction_area)
+    self.robot_slots_count =
+        settings.logistical_robot_slots:get()
+        + (settings.logistical_robot_modifier:get()
+            * self.levels.robot_storage)
+    self.material_slots_count =
+        settings.logistical_material_slots:get()
+        + (settings.logistical_material_modifier:get()
+            * self.levels.material_storage)
 
-logistical_roboport_entity.recharge_minimum = tostring(recharge_minimum:value()) .. recharge_minimum:suffix()
-logistical_roboport_entity.energy_usage = tostring(energy_usage:value()) .. energy_usage:suffix()
-logistical_roboport_entity.charging_energy = tostring(charging_energy:value() * 5) .. charging_energy:suffix()
-logistical_roboport_entity.charging_offsets = generate_charging_offsets(1)
--- Lower amount of simultaneously charging robots discourages them from going here.
--- Increased charge rate to avoid robots taking too long to charge.
+    self:_apply_energy()
+    self.localised_name = self:get_localised_name()
+    return self
+end
 
--- Buff roboport storage and radius as benefit.
-logistical_roboport_entity.logistics_radius = base_roboport_entity.logistics_radius + 5 -- TODO: Move these values to startup settings
-logistical_roboport_entity.construction_radius = base_roboport_entity.construction_radius + 10 -- TODO: Move these values to startup settings
-logistical_roboport_entity.robot_slots_count = 10 -- TODO: Move these values to startup settings
-logistical_roboport_entity.material_slots_count = 10 -- TODO: Move these values to startup settings
+function LogisticalRoboport:_apply_energy()
+    -- Nerf energy usage as tradeoff. Half as effective at charging than the normal roboport.
+    local recharge_minimum = Energy.new(self.recharge_minimum)
+    local energy_usage = Energy.new(self.energy_usage)
+    self.recharge_minimum = tostring(recharge_minimum:value()) .. recharge_minimum:suffix()
+    self.energy_usage = tostring(energy_usage:value()) .. energy_usage:suffix()
 
+    -- Lower amount of simultaneously charging robots discourages them from going here.
+    -- Increased charge rate to avoid robots taking too long to charge.
+    local charging_energy = Energy.new(self.charging_energy)
+    self.charging_energy = tostring(
+        charging_energy:with_scale(#self.charging_offsets or self.charging_station_count))
+    self.charging_offsets = offsets.generate_charging_offsets(1)
+end
 
----@type data.RecipePrototype
-local storage_roboport_recipe = {
-    type = "recipe",
-    name = "logistical-roboport",
-    enabled = false,
-    ---@type data.IngredientPrototype[]
-    ingredients = {
-        {type = "item", name = "roboport", amount = 1},
-        {type = "item", name ="steel-plate", amount = 100},
-    },
-    ---@type data.ItemProductPrototype[]
-    results = {{type = "item", name = logistical_roboport_entity.name, amount = 1},},
-    category = "crafting",
-    unlock_results = true,
-}
+function LogisticalRoboport:get_suffix()
+    return tostring(
+        "c"
+        .. number.within_bounds(
+            self.levels.construction_area,
+            0,
+            settings.construction_area_limit:get())
+        .. "l"
+        .. number.within_bounds(
+            self.levels.logistic_area,
+            0,
+            settings.logistic_area_limit:get())
+        .. "r"
+        .. number.within_bounds(
+            self.levels.robot_storage,
+            0,
+            settings.robot_storage_limit:get())
+        .. "m"
+        .. number.within_bounds(
+            self.levels.material_storage,
+            0,
+            settings.material_storage_limit:get()))
+end
 
-local function create_base_roboport()
+local function create_bases()
+    local entity = LogisticalRoboport.new()
+    local recipe = entity:recipes()[1]
+    local item = entity:items()[1]
+    entity.localised_name = entity.name
     return {
-        logistical_roboport_item,
-        storage_roboport_recipe,
-        logistical_roboport_entity,
+        item,
+        recipe,
+        entity,
     }
 end
 
--- Helper function to create a logistical roboport variant
-local function create_logistical_roboport_variant(base_item, base_entity, c, l, r, m)
-    local roboport_item = table.deepcopy(base_item)
-    local roboport_entity = table.deepcopy(base_entity)
-
-    local suffix = get_storage_suffix(c, l, r, m)
-    local name = "logistical-roboport-mk-" .. suffix
-
-    roboport_entity.localised_name = {"entity-name.logistical-roboport-mk-", tostring(c), tostring(l), tostring(r), tostring(m)}
-    roboport_item.localised_name = {"item-name.logistical-roboport-mk-", tostring(c), tostring(l), tostring(r), tostring(m)}
-
-    roboport_item.name = name
-    roboport_entity.name = name
-    roboport_item.place_result = roboport_entity.name
-    roboport_entity.fast_replaceable_group = "logistical-roboport"
-    roboport_item.hidden = true
-
-    -- Pre-calculate base values to avoid repeated access
-    local rb = base_entity.robot_slots_count
-    local mb = base_entity.material_slots_count
-    local cb = base_entity.construction_radius
-    local lb = base_entity.logistics_radius
-    local ldb = base_entity.logistics_connection_distance or lb
-
-    -- Apply upgrades with pre-calculated values
-    roboport_entity.robot_slots_count = (rb * r) + rb
-    roboport_entity.material_slots_count = (mb * m) + mb
-    roboport_entity.construction_radius = (cb * c) + cb
-    roboport_entity.logistics_radius = (lb * l) + lb
-    roboport_entity.logistics_connection_distance = (ldb * l) + ldb
-    return roboport_item, roboport_entity
-end
-
-local function create_roboports()
+local function create_variants()
     local to_add = {}
 
-    for c=0, construction_area_limit do 
-        for l=0, logistic_area_limit do
-            for r=0, robot_storage_limit do
-                for m=0, material_storage_limit do
-                    local roboport_item, roboport_entity = create_logistical_roboport_variant(
-                        logistical_roboport_item, logistical_roboport_entity, c, l, r, m
-                    )
-
-                    if show_items:get() then
-                        roboport_item.subgroup = "item-sub-group-roboport"
-                        table.insert(to_add, roboport_item)
+    for c = 0, settings.construction_area_limit:get() do
+        for l = 0, settings.logistic_area_limit:get() do
+            for r = 0, settings.robot_storage_limit:get() do
+                for m = 0, settings.material_storage_limit:get() do
+                    entity = LogisticalRoboport.new({
+                        construction_area = c,
+                        logistic_area = l,
+                        robot_storage = r,
+                        material_storage = m,
+                    })
+                    if settings.show_items:get() then
+                        item = entity:items()[1]
+                        item.subgroup = "item-sub-group-roboport"
+                        table.insert(to_add, item)
                     end
-
-                    table.insert(to_add, roboport_entity)
+                    table.insert(to_add, entity)
                 end
             end
         end
@@ -123,5 +127,5 @@ local function create_roboports()
     return to_add
 end
 
-data:extend(create_base_roboport())
-data:extend(create_roboports())
+data:extend(create_bases())
+data:extend(create_variants())

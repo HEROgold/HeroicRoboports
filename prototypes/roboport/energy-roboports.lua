@@ -1,134 +1,141 @@
-
 local Energy = require("__heroic-library__.energy")
-require("helpers.suffix")
-require("helpers.charging_offset")
-
-local base_roboport_entity = data.raw["roboport"]["roboport"]
-local base_roboport_item = data.raw["item"]["roboport"]
-
-local efficiency_limit = math.max(Limits["efficiency"], research_minimum)
-local productivity_limit = math.max(Limits["productivity"], research_minimum)
-local speed_limit = math.max(Limits["speed"], research_minimum)
-
-local energy_roboport_entity = table.deepcopy(base_roboport_entity)
-local energy_roboport_item = table.deepcopy(base_roboport_item)
-
-energy_roboport_item.name = "energy-roboport"
-energy_roboport_entity.name = "energy-roboport"
-
-energy_roboport_item.place_result = energy_roboport_entity.name
-energy_roboport_entity.minable.result = energy_roboport_item.name
-
--- Nerf roboport storage and radius as tradeoff.
-energy_roboport_entity.robot_slots_count = 0
-energy_roboport_entity.material_slots_count = 0
-energy_roboport_entity.logistics_radius = base_roboport_entity.logistics_radius - 5 -- TODO: Move these values to startup settings
-energy_roboport_entity.construction_radius = base_roboport_entity.construction_radius - 10 -- TODO: Move these values to startup settings
--- Due to the researches being available right after unlocking, it starts out with no benefits.
-
----@type data.RecipePrototype
-local energy_roboport_recipe = {
-    type = "recipe",
-    name = "energy-roboport",
-    enabled = false,
-    ---@type data.IngredientPrototype[]
-    ingredients = {
-        {type = "item", name =Roboport, amount = 1},
-        {type = "item", name ="steel-plate", amount = 100},
-    },
-    ---@type data.ItemProductPrototype[]
-    results = {{type = "item", name = energy_roboport_item.name, amount = 1},},
-    category = "crafting",
-    unlock_results = true,
-}
+local BaseRoboport = require("prototypes.roboport.base")
+local offsets = require("helpers.charging_offset")
+local settings = require("settings")
 
 
--- Helper function to create a roboport variant
----@param base_item data.ItemPrototype
----@param base_entity data.RoboportPrototype
----@param e integer Efficiency level
----@param p integer Productivity level
----@param s integer Speed level
-local function create_energy_roboport_variant(base_item, base_entity, e, p, s)
-    local roboport_item = table.deepcopy(base_item)
-    local roboport_entity = table.deepcopy(base_entity)
+---@class EnergyRoboport: BaseRoboport
+---@field levels table<string, integer>
+local EnergyRoboport = setmetatable({}, { __index = BaseRoboport })
+EnergyRoboport.__index = EnergyRoboport
 
-    local suffix = get_energy_suffix(e, p, s)
-    local name = "energy-roboport-mk-" .. suffix
+---@class EnergyLevels
+---@field efficiency integer
+---@field productivity integer
+---@field speed integer
 
-    roboport_entity.localised_name = {"entity-name.energy-roboport-mk-", tostring(e), tostring(p), tostring(s)}
-    roboport_item.localised_name = {"item-name.energy-roboport-mk-", tostring(e), tostring(p), tostring(s)}
+---@return self
+---@param levels EnergyLevels | nil
+function EnergyRoboport.new(levels)
+    local self = setmetatable(BaseRoboport.new(), EnergyRoboport) --[[@as EnergyRoboport]]
+    self.name = "energy-roboport"
 
-    roboport_item.name = name
-    roboport_entity.name = name
-    roboport_item.hidden = true
-    roboport_item.place_result = roboport_entity.name
-    roboport_entity.fast_replaceable_group = "energy-roboport"
+    self.levels = levels or {
+        efficiency = 0,
+        productivity = 0,
+        speed = 0,
+    }
 
-    -- Pre-calculate base values to avoid repeated string parsing
-    local energy_source_e = Energy.new(base_entity.energy_source["input_flow_limit"])
-    local buffer_capacity_e = Energy.new(base_entity.energy_source["buffer_capacity"])
-    local recharge_minimum_e = Energy.new(base_entity.recharge_minimum)
-    local energy_usage_e = Energy.new(base_entity.energy_usage)
-    local charging_energy_e = Energy.new(base_entity.charging_energy)
-    local charging_offset_count = #base_entity.charging_offsets
-    local input_flow = energy_source_e:value() + energy_source_e:value()*e*input_flow_limit_modifier
-    local input_flow_e = Energy.new(tostring(input_flow) .. energy_source_e:suffix())
+    --- Nerf roboport storage and radius as tradeoff.
+    --- Due to the researches being available right after unlocking, it starts out with no benefits.
+    self.logistics_radius = settings.energy_logistics_radius:get()
+    self.construction_radius = settings.energy_construction_radius:get()
+    self.robot_slots_count = settings.energy_robot_slots:get()
+    self.material_slots_count = settings.energy_material_slots:get()
 
-    local scaled_buffer_capacity = Energy.new(buffer_capacity_e:value()*e*buffer_capacity_modifier .. buffer_capacity_e:suffix())
-    local scaled_recharge_minimum = Energy.new(recharge_minimum_e:value()*e*recharge_minimum_modifier .. recharge_minimum_e:suffix())
-    local scaled_energy_usage = Energy.new(energy_usage_e:value()*e*energy_usage_modifier .. energy_usage_e:suffix())
-    local scaled_charging_energy = Energy.new(charging_energy_e:value()*s*charging_energy_modifier .. charging_energy_e:suffix())
-    local scaled_input_flow = Energy.new(energy_source_e:value()*e*input_flow_limit_modifier .. energy_source_e:suffix())
+    self:_apply_energy()
+    self.localised_name = self:get_localised_name()
+    return self
+end
 
-    buffer_capacity_e:add(scaled_buffer_capacity)
-    -- Apply upgrades with pre-calculated values -- Check if Speed levels actually charge faster!!
-    roboport_entity.energy_source = {
+function EnergyRoboport:_apply_energy()
+    -- Helper to calculate "Base + (Base * Multiplier * Modifier)"
+    ---@param base data.Energy
+    ---@param mod SettingContainer<number>
+    ---@param multiplier integer
+    local function get_scaled(base, mod, multiplier)
+        local base = Energy.new(base)
+        -- This assumes your Energy class can handle math or you extract the value
+        local scaled_value = base:value() * (1 + (multiplier * mod:get()))
+        return Energy.new(scaled_value .. base:suffix())
+    end
+
+    -- 1. Update Object State
+    self.recharge_minimum = tostring(get_scaled(
+        self.recharge_minimum,
+        settings.recharge_minimum_modifier,
+        self.levels.efficiency))
+    self.energy_usage     = tostring(get_scaled(
+        self.energy_usage,
+        settings.energy_usage_modifier,
+        self.levels.efficiency))
+    self.charging_energy  = tostring(get_scaled(
+        self.charging_energy,
+        settings.charging_energy_modifier,
+        self.levels.speed))
+
+    -- 3. Update Offsets
+    local count           = #self.charging_offsets
+    self.charging_offsets = offsets.generate_charging_offsets(count + (count * self.levels.productivity))
+
+    -- 4. Update energy source
+    self.energy_source    = {
         type = "electric",
         usage_priority = "secondary-input",
-        input_flow_limit = tostring(input_flow) .. energy_source_e:suffix(),
-        buffer_capacity = tostring(buffer_capacity_e),
+        input_flow_limit = tostring(get_scaled(
+            self.energy_source.input_flow_limit,
+            settings.input_flow_limit_modifier,
+            self.levels.efficiency)),
+        buffer_capacity = tostring(get_scaled(
+            self.energy_source.buffer_capacity,
+            settings.buffer_capacity_modifier,
+            self.levels.efficiency)),
     }
-
-    recharge_minimum_e:add(scaled_recharge_minimum)
-    energy_usage_e:add(scaled_energy_usage)
-    charging_energy_e:add(scaled_charging_energy)
-
-    roboport_entity.recharge_minimum = tostring(recharge_minimum_e)
-    roboport_entity.energy_usage = tostring(energy_usage_e)
-    roboport_entity.charging_energy = tostring(charging_energy_e)
-    roboport_entity.charging_offsets = generate_charging_offsets(charging_offset_count + charging_offset_count * p)
-    return roboport_item, roboport_entity
 end
 
-local function create_base_roboport()
+function EnergyRoboport:get_suffix()
+    return tostring(
+        "e"
+        .. number.within_bounds(
+            self.levels.efficiency,
+            0,
+            settings.energy_efficiency_limit:get())
+        .. "p"
+        .. number.within_bounds(
+            self.levels.productivity,
+            0,
+            settings.energy_productivity_limit:get())
+        .. "s"
+        .. number.within_bounds(
+            self.levels.speed,
+            0,
+            settings.energy_speed_limit:get()))
+end
+
+local function create_bases()
+    local entity = EnergyRoboport.new()
+    local recipe = entity:recipes()[1]
+    local item = entity:items()[1]
+    entity.localised_name = entity.name
     return {
-        energy_roboport_item,
-        energy_roboport_recipe,
-        energy_roboport_entity,
+        item,
+        recipe,
+        entity,
     }
 end
 
-local function create_roboports()
+local function create_variants()
     local to_add = {}
 
-    for e=0, efficiency_limit do
-        for p=0, productivity_limit do
-            for s=0, speed_limit do
-                local roboport_item, roboport_entity = create_energy_roboport_variant(
-                    energy_roboport_item, energy_roboport_entity, e, p, s
-                )
-
-                if show_items:get() then
-                    roboport_item.subgroup = "item-sub-group-roboport"
-                    table.insert(to_add, roboport_item)
+    for e = 0, settings.energy_efficiency_limit:get() do
+        for p = 0, settings.energy_productivity_limit:get() do
+            for s = 0, settings.energy_speed_limit:get() do
+                entity = EnergyRoboport.new({
+                    efficiency = e,
+                    productivity = p,
+                    speed = s,
+                })
+                if settings.show_items:get() then
+                    item = entity:items()[1]
+                    item.subgroup = "item-sub-group-roboport"
+                    table.insert(to_add, item)
                 end
-                table.insert(to_add, roboport_entity)
+                table.insert(to_add, entity)
             end
         end
     end
     return to_add
 end
 
-data:extend(create_base_roboport())
-data:extend(create_roboports())
+data:extend(create_bases())
+data:extend(create_variants())
