@@ -1,11 +1,10 @@
 require("__heroic-library__.utilities")
 
 local entities = require("__heroic-library__.entities")
-local strings = require("__heroic-library__.string")
 local settings = require("settings")
 require("script.commands")
-require("helpers.levels")
-require("helpers.suffix")
+local levels = require("helpers.levels")
+local suffix = require("helpers.suffix")
 
 script.on_init(function(event)
     InitializeStorage()
@@ -30,18 +29,18 @@ local function validate_roboport(roboport)
     if roboport_name == "roboport" then
         -- The entity is from vanilla Factorio
         return true
-    elseif strings.starts_with(roboport_name, "energy-roboport-mk-") then
-        local port_levels = energy_levels_from_name(roboport_name)
+    elseif string.starts_with(roboport_name, "energy-roboport-mk-") then
+        local port_levels = levels.energy_levels_from_name(roboport_name)
         ---@diagnostic disable-next-line: param-type-mismatch
-        local tech_levels = get_energy_levels(roboport.force)
+        local tech_levels = levels.get_energy_levels(roboport.force)
         -- Check for correct levels, to avoid replacing already correct (or higher tier) roboports.
         if port_levels[1] < tech_levels[1] or port_levels[2] < tech_levels[2] or port_levels[3] < tech_levels[3] then
             return true
         end
-    elseif strings.starts_with(roboport_name, "logistical-roboport-mk-") then
-        local port_levels = storage_levels_from_name(roboport_name)
+    elseif string.starts_with(roboport_name, "logistical-roboport-mk-") then
+        local port_levels = levels.storage_levels_from_name(roboport_name)
         ---@diagnostic disable-next-line: param-type-mismatch
-        local tech_levels = get_logistical_levels(roboport.force)
+        local tech_levels = levels.get_logistical_levels(roboport.force)
         if
             port_levels[1] < tech_levels[1]
             or port_levels[2] < tech_levels[2]
@@ -50,9 +49,9 @@ local function validate_roboport(roboport)
         then
             return true
         end
-    elseif strings.starts_with(roboport_name, "energy-roboport") then
+    elseif string.starts_with(roboport_name, "energy-roboport") then
         return true
-    elseif strings.starts_with(roboport_name, "logistical-roboport") then
+    elseif string.starts_with(roboport_name, "logistical-roboport") then
         return true
     else
         return false
@@ -67,8 +66,8 @@ local function validate_ghost(ghost)
     end
     if
         not ghost.valid
-        or not strings.starts_with(ghost.ghost_name, "energy-roboport-mk-")
-            and not strings.starts_with(ghost.ghost_name, "logistical-roboport-mk-")
+        or not string.starts_with(ghost.ghost_name, "energy-roboport-mk-")
+            and not string.starts_with(ghost.ghost_name, "logistical-roboport-mk-")
     then
         storage.ghosts_to_update[ghost] = nil
         return false
@@ -81,9 +80,9 @@ local function update_energy_roboport_level(roboport)
     local surface = roboport.surface
     local old_energy = roboport.energy
     local force = roboport.force
-    local suffix = get_energy_suffix(
+    local suffix = suffix.get_energy_suffix(
         ---@diagnostic disable-next-line: param-type-mismatch
-        table.unpack(get_energy_levels(force))
+        table.unpack(levels.get_energy_levels(force))
     )
 
     local created_rport = surface.create_entity({
@@ -108,9 +107,9 @@ local function update_storage_roboport_level(roboport)
     local surface = roboport.surface
     local old_energy = roboport.energy
     local force = roboport.force
-    local storage_suffix = helpers.get_storage_suffix(
+    local storage_suffix = suffix.get_storage_suffix(
         ---@diagnostic disable-next-line: param-type-mismatch
-        table.unpack(get_logistical_levels(force))
+        table.unpack(levels.get_logistical_levels(force))
     )
 
     local created_rport = surface.create_entity({
@@ -138,7 +137,7 @@ local function update_ghost_level(roboport)
 
     local to_create = {}
 
-    if strings.starts_with(roboport.ghost_name, "logistical-roboport-mk-") then
+    if string.starts_with(roboport.ghost_name, "logistical-roboport-mk-") then
         to_create = {
             name = "entity-ghost",
             type = "entity-ghost",
@@ -153,7 +152,7 @@ local function update_ghost_level(roboport)
             raise_built = false,
             quality = roboport.quality,
         }
-    elseif strings.starts_with(roboport.ghost_name, "energy-roboport") then
+    elseif string.starts_with(roboport.ghost_name, "energy-roboport") then
         to_create = {
             name = "entity-ghost",
             type = "entity-ghost",
@@ -183,9 +182,9 @@ local function update_roboport_level(roboport)
         return
     end
 
-    if strings.starts_with(roboport.name, "logistical-roboport") then
+    if string.starts_with(roboport.name, "logistical-roboport") then
         update_storage_roboport_level(roboport)
-    elseif strings.starts_with(roboport.name, "energy-roboport") then
+    elseif string.starts_with(roboport.name, "energy-roboport") then
         update_energy_roboport_level(roboport)
     else
         storage.roboports_to_update[roboport] = nil

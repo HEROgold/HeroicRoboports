@@ -1,6 +1,5 @@
 
 local tech = require("__heroic-library__.technology")
-local strings = require("__heroic-library__.string")
 local levels = require("helpers.levels")
 
 function uninstall()
@@ -8,8 +7,8 @@ function uninstall()
         entities = surface.find_entities_filtered { type = "roboport" }
         roboports = table.filtered(entities, function(v)
             return (
-                strings.starts_with(roboport.name, "energy-roboport")
-                or strings.starts_with(roboport.name, "logistical-roboport")
+                string.starts_with(roboport.name, "energy-roboport")
+                or string.starts_with(roboport.name, "logistical-roboport")
                 -- TODO: Also include ghosts properly.
             )
         end)
@@ -62,7 +61,7 @@ function reset()
                 goto continue
             end
 
-            if strings.starts_with(roboport.name, "energy-roboport") then
+            if string.starts_with(roboport.name, "energy-roboport") then
                 local old_energy = roboport.energy
                 local created_rport = surface.create_entity {
                     name = "energy-roboport",
@@ -75,7 +74,7 @@ function reset()
                 }
                 created_rport.energy = old_energy
                 roboport.destroy()
-            elseif strings.starts_with(roboport.name, "logistical-roboport") then
+            elseif string.starts_with(roboport.name, "logistical-roboport") then
                 local old_energy = roboport.energy
                 local created_rport = surface.create_entity {
                     name = "logistical-roboport",
@@ -137,7 +136,7 @@ commands.add_command(
         for _, force in pairs(game.forces) do
             game.print("Force: " .. force.name)
             for _, tech in pairs(force.technologies) do
-                if strings.starts_with(tech.name, "roboport") then
+                if string.starts_with(tech.name, "roboport") then
                     game.print("Tech: " .. tech.name)
                 end
             end

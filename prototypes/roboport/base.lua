@@ -1,12 +1,11 @@
 ---@class BaseRoboport: data.RoboportPrototype
+---@field _name string Internal name for the roboport.
 local BaseRoboport = {}
 BaseRoboport.__index = BaseRoboport
 
 ---@return self
 function BaseRoboport.new()
-    self = setmetatable(table.deepcopy(data.raw["roboport"]["roboport"]), BaseRoboport)
-    self.minable.result = self.name
-    return self
+    return setmetatable(table.deepcopy(data.raw["roboport"]["roboport"]), BaseRoboport)
 end
 
 ---@abstract
@@ -49,8 +48,12 @@ function BaseRoboport:recipes()
     }
 end
 
+function BaseRoboport:get_name()
+    return self._name .. "-mk-" .. self:get_suffix()
+end
+
 function BaseRoboport:get_localised_name()
-    return { self.name .. "-mk-", self:get_suffix() }
+    return { self._name .. "-mk-", self:get_suffix() }
 end
 
 return BaseRoboport

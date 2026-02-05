@@ -17,7 +17,8 @@ EnergyRoboport.__index = EnergyRoboport
 ---@param levels EnergyLevels | nil
 function EnergyRoboport.new(levels)
 	local self = setmetatable(BaseRoboport.new(), EnergyRoboport) --[[@as EnergyRoboport]]
-	self.name = "energy-roboport"
+	self._name = "energy-roboport"
+	self.minable.result = self._name
 
 	self.levels = levels or {
 		efficiency = 0,
@@ -33,6 +34,7 @@ function EnergyRoboport.new(levels)
 	self.material_slots_count = settings.energy_material_slots:get()
 
 	self:_apply_energy()
+	self.name = self:get_name()
 	self.localised_name = self:get_localised_name()
 	return self
 end
@@ -86,6 +88,7 @@ end
 
 local function create_bases()
 	local entity = EnergyRoboport.new()
+	entity.name = "energy-roboport"
 	local recipe = entity:recipes()[1]
 	local item = entity:items()[1]
 	entity.localised_name = entity.name

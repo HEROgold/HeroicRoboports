@@ -18,7 +18,9 @@ LogisticalRoboport.__index = LogisticalRoboport
 ---@param levels LogisticalLevels | nil
 function LogisticalRoboport.new(levels)
     local self = setmetatable(BaseRoboport.new(), LogisticalRoboport) --[[@as LogisticalRoboport]]
-    self.name = "logistical-roboport"
+    self._name = "logistical-roboport"
+	self.minable.result = self._name
+
     self.levels = levels
         or {
             construction_area = 0,
@@ -38,7 +40,8 @@ function LogisticalRoboport.new(levels)
         + (settings.logistical_material_modifier:get() * self.levels.material_storage)
 
     self:_apply_energy()
-    self.localised_name = self:get_localised_name()
+	self.name = self:get_name()
+	self.localised_name = self:get_localised_name()
     return self
 end
 
@@ -71,6 +74,7 @@ end
 
 local function create_bases()
     local entity = LogisticalRoboport.new()
+    entity.name = "logistical-roboport"
     local recipe = entity:recipes()[1]
     local item = entity:items()[1]
     entity.localised_name = entity.name
