@@ -1,57 +1,65 @@
+local settings = require("settings")
+local tech = require("__heroic-library__.technology")
+
+local levels = {}
+
 ---@param force LuaForce
 ---@return table<number, number, number, number>
-function get_logistical_levels(force)
-    levels = { 0, 0, 0, 0 }
+function levels.get_logistical_levels(force)
+    local out = { 0, 0, 0, 0 }
+    local research_minimum = settings.research_minimum:get()
+
     for i, name in ipairs({
         "roboport-construction-area",
         "roboport-logistic-area",
         "roboport-robot-storage",
         "roboport-material-storage",
     }) do
-        for level = 1, research_minimum, 1 do
-            local tech_level = get_tech_level(force, name, level)
-            if levels[i] < tech_level then
-                levels[i] = tech_level
+        for level = 1, research_minimum do
+            local tech_level = tech.get_tech_level(force, name, level)
+            if out[i] < tech_level then
+                out[i] = tech_level
             end
         end
     end
-    return levels
+
+    return out
 end
 
 ---@param force LuaForce
 ---@return table<number, number, number>
-function get_energy_levels(force)
-    local levels = { 0, 0, 0 }
+function levels.get_energy_levels(force)
+    local out = { 0, 0, 0 }
+    local research_minimum = settings.research_minimum:get()
+
     for i, name in ipairs({
         "roboport-efficiency",
         "roboport-productivity",
         "roboport-speed",
     }) do
-        for level = 1, research_minimum, 1 do
-            local tech_level = get_tech_level(force, name, level)
-            if levels[i] < tech_level then
-                levels[i] = tech_level
+        for level = 1, research_minimum do
+            local tech_level = tech.get_tech_level(force, name, level)
+            if out[i] < tech_level then
+                out[i] = tech_level
             end
         end
     end
-    return levels
+
+    return out
 end
 
 ---@param to_check string
 ---@return table<number, number, number>
-function energy_levels_from_name(to_check)
-    local eff = string.sub(to_check, -5, -5)
-    local prod = string.sub(to_check, -3, -3)
-    local speed = string.sub(to_check, -1, -1)
-    return { tonumber(eff), tonumber(prod), tonumber(speed) }
+function levels.energy_levels_from_name(to_check)
+    local eff, prod, speed = string.match(to_check, "e(%d+)p(%d+)s(%d+)")
+    return { tonumber(eff) or 0, tonumber(prod) or 0, tonumber(speed) or 0 }
 end
 
 ---@param to_check string
 ---@return table<number, number, number, number>
-function storage_levels_from_name(to_check)
-    local c = string.sub(to_check, -7, -7)
-    local l = string.sub(to_check, -5, -5)
-    local r = string.sub(to_check, -3, -3)
-    local m = string.sub(to_check, -1, -1)
-    return { tonumber(c), tonumber(l), tonumber(r), tonumber(m) }
+function levels.storage_levels_from_name(to_check)
+    local c, l, r, m = string.match(to_check, "c(%d+)l(%d+)r(%d+)m(%d+)")
+    return { tonumber(c) or 0, tonumber(l) or 0, tonumber(r) or 0, tonumber(m) or 0 }
 end
+
+return levels
