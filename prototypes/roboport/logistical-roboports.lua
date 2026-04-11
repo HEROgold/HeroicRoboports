@@ -77,7 +77,7 @@ local function create_bases()
     entity.name = "logistical-roboport"
     local recipe = entity:recipes()[1]
     local item = entity:items()[1]
-    entity.localised_name = entity.name
+    entity.localised_name = { "entity-name.logistical-roboport" }
     return {
         item,
         recipe,

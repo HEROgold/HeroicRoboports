@@ -52,8 +52,22 @@ function BaseRoboport:get_name()
     return self._name .. "-mk-" .. self:get_suffix()
 end
 
+---@return string[]
+function BaseRoboport:get_suffix_segments()
+    local suffix = self:get_suffix()
+    local segments = {}
+    for segment in string.gmatch(suffix, "[a-z]%d+") do
+        segments[#segments + 1] = segment
+    end
+    if #segments == 0 then
+        segments[1] = suffix
+    end
+    return segments
+end
+
 function BaseRoboport:get_localised_name()
-    return { self._name .. "-mk-", self:get_suffix() }
+    local segments = self:get_suffix_segments()
+    return { "entity-name." .. self._name .. "-mk", table.unpack(segments) }
 end
 
 return BaseRoboport
