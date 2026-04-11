@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.4
+Date: 2025-04-12
+  Changes:
+    - Internal code changes.
+    - Updated the display name of the roboports to be properly localized.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2025-01-01
   Changes:
