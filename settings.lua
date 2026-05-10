@@ -78,13 +78,13 @@ show_items = startup:default("show-items", true)
 -- Roboport specific modifiers and slot counts
 energy_robot_slots = startup:default("energy-roboport-robot-slots", 0, { minimum = 0, maximum = 100 })
 energy_material_slots = startup:default("energy-roboport-material-slots", 0, { minimum = 0, maximum = 100 })
-energy_logistics_radius = startup:default("energy-roboport-logistics-radius", 50, { minimum = 0, maximum = 500 })
-energy_construction_radius = startup:default("energy-roboport-construction-radius", 50, { minimum = 0, maximum = 500 })
+energy_logistics_radius = startup:default("energy-roboport-logistics-radius", 20, { minimum = 0, maximum = 500 })
+energy_construction_radius = startup:default("energy-roboport-construction-radius", 45, { minimum = 0, maximum = 500 })
 
 logistical_logistics_radius =
-    startup:default("logistical-roboport-logistics-radius", 50, { minimum = 0, maximum = 500 })
+    startup:default("logistical-roboport-logistics-radius", 30, { minimum = 0, maximum = 500 })
 logistical_construction_radius =
-    startup:default("logistical-roboport-construction-radius", 50, { minimum = 0, maximum = 500 })
+    startup:default("logistical-roboport-construction-radius", 60, { minimum = 0, maximum = 500 })
 logistical_robot_slots = startup:default("logistical-roboport-robot-slots", 10, { minimum = 0, maximum = 100 })
 logistical_material_slots = startup:default("logistical-roboport-material-slots", 10, { minimum = 0, maximum = 100 })
 logistical_logistics_radius_modifier =
