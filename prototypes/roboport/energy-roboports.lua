@@ -91,6 +91,8 @@ local function create_bases()
 	entity.name = "energy-roboport"
 	local recipe = entity:recipes()[1]
 	local item = entity:items()[1]
+	item.subgroup = "logistic-network"
+	item.order = "c[signal]-a[roboport]-b[energy-roboport]"
 	entity.localised_name = { "entity-name.energy-roboport" }
 	return {
 		item,
