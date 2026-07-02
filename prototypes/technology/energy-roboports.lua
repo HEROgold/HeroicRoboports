@@ -15,10 +15,6 @@ local function get_research_name(module_type, level)
     return "roboport-" .. module_type .. utilities.get_level_suffix(level)
 end
 
-local get_effect_description = function(module_type)
-    return "Upgrade the " .. module_type .. " of a energy roboport"
-end
-
 -- the module technology is the 1st prerequisite
 ---@return table<TechnologyID>
 local function get_research_prerequisites(module_type, level)
@@ -65,7 +61,8 @@ end
 
 local function add_module_upgrade_research()
     for _, module_type in pairs(module_names) do
-        local limit = math.max(Limits[module_type], settings.research_minimum:get())
+        -- Limits.energy already applies the research_minimum/maximum + per-axis clamps.
+        local limit = Limits.energy[module_type]
 
         for i = 1, limit do
             data:extend({
@@ -81,7 +78,7 @@ local function add_module_upgrade_research()
                     effects = {
                         {
                             type = "nothing",
-                            effect_description = get_effect_description(module_type),
+                            effect_description = { "heroic-roboports-effect.energy", module_type },
                         },
                     },
                     unit = {

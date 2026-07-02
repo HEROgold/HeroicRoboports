@@ -1,113 +1,115 @@
 require("__heroic-library__.utilities")
 require("__heroic-library__.table")
 local Tech = require("__heroic-library__.technology")
-require("settings")
+local settings = require("settings")
+local codec = require("name_codec")
+local Limits = require("limits")
+
+-- Map each logistical technology name to its Limits.logistical axis key.
+local tech_to_key = {}
+for _, axis in ipairs(codec.LOGISTICAL_AXES) do
+    tech_to_key[axis.tech] = axis.key
+end
+
+-- Space Age planet pack anchored to each logistical axis.
+local axis_science_pack = {
+    ["roboport-construction-area"] = "metallurgic-science-pack",
+    ["roboport-logistic-area"] = "electromagnetic-science-pack",
+    ["roboport-robot-storage"] = "agricultural-science-pack",
+    ["roboport-material-storage"] = "agricultural-science-pack",
+}
 
 local function get_research_name(upgrade_name, level)
     return upgrade_name .. utilities.get_level_suffix(level)
 end
 
----@return table<TechnologyID>
-local function get_SA_prerequisites(upgrade_name, level)
-    ---@type table<TechnologyID>
-    local prerequisites = {}
-
-    if upgrade_name == "roboport-construction-area" then
-        table.insert(prerequisites, "metallurgic-science-pack")
-    elseif upgrade_name == "roboport-logistic-area" then
-        table.insert(prerequisites, "electromagnetic-science-pack")
-    elseif upgrade_name == "roboport-robot-storage" then
-        table.insert(prerequisites, "agricultural-science-pack")
-    elseif upgrade_name == "roboport-material-storage" then
-        table.insert(prerequisites, "agricultural-science-pack")
+--- Science-anchored ladder: returns the science packs a given tier requires beyond the base
+--- automation/logistic packs. Thresholds are relative to the axis' tier limit, so the ladder
+--- spreads across however many tiers exist and top tiers become an endgame investment. Each
+--- pack name doubles as both the unlocking technology (prerequisite) and the tool (ingredient).
+---@param upgrade_name string
+---@param level integer
+---@param limit integer
+---@return string[]
+local function science_ladder(upgrade_name, level, limit)
+    local packs = {}
+    -- Reaches `threshold` fraction of the limit (never before tier 2).
+    local function at(threshold)
+        return level >= math.max(2, math.ceil(threshold * limit))
     end
 
-    if level >= 2 then
-        table.insert(prerequisites, "cryogenic-science-pack")
+    -- Base-game ladder.
+    if at(0.25) then
+        packs[#packs + 1] = "chemical-science-pack"
+    end
+    if at(0.45) then
+        packs[#packs + 1] = "production-science-pack"
+    end
+    if at(0.65) then
+        packs[#packs + 1] = "utility-science-pack"
     end
 
-    if level >= 3 then
-        table.insert(prerequisites, "promethium-science-pack")
+    -- Space Age ladder.
+    if mods["space-age"] then
+        if at(0.50) and axis_science_pack[upgrade_name] then
+            packs[#packs + 1] = axis_science_pack[upgrade_name]
+        end
+        if at(0.75) then
+            packs[#packs + 1] = "space-science-pack"
+        end
+        if at(0.90) then
+            packs[#packs + 1] = "cryogenic-science-pack"
+        end
+        if level >= limit then
+            packs[#packs + 1] = "promethium-science-pack"
+        end
     end
-    return prerequisites
+
+    return packs
 end
 
 ---@return table<TechnologyID>
-local function get_research_prerequisites(upgrade_name, level)
+local function get_research_prerequisites(upgrade_name, level, limit)
     ---@type table<TechnologyID>
     local prerequisites = {}
-
     if level == 1 then
-        prerequisites = {
-            "logistic-robotics",
-        }
+        prerequisites[#prerequisites + 1] = "logistic-robotics"
     else
-        prerequisites = {
-            get_research_name(upgrade_name, level - 1),
-        }
+        prerequisites[#prerequisites + 1] = get_research_name(upgrade_name, level - 1)
     end
-    if mods["space-age"] then
-        table.extend(prerequisites, get_SA_prerequisites(upgrade_name, level))
+
+    -- Anchor higher tiers behind the science-pack technologies (when they exist).
+    for _, pack in ipairs(science_ladder(upgrade_name, level, limit)) do
+        if data.raw["technology"][pack] then
+            prerequisites[#prerequisites + 1] = pack
+        end
     end
     return prerequisites
 end
 
-local function get_effect_description(upgrade_name)
-    -- TODO: Use proper localization
-    return "Upgrade the " .. upgrade_name .. " of a logistical roboport"
-end
-
----@param upgrade_type data.TechnologyPrototype
----@param level number
----@param ingredients data.IngredientPrototype
-local function add_SA_ingredients(upgrade_type, level, ingredients)
-    if mods["space-age"] then
-        if upgrade_type == "roboport-construction-area" then
-            table.insert(ingredients, { "metallurgic-science-pack", 1 })
-        elseif upgrade_type == "roboport-logistic-area" then
-            table.insert(ingredients, { "electromagnetic-science-pack", 1 })
-        elseif upgrade_type == "roboport-robot-storage" then
-            table.insert(ingredients, { "agricultural-science-pack", 1 })
-        elseif upgrade_type == "roboport-material-storage" then
-            table.insert(ingredients, { "agricultural-science-pack", 1 })
-        end
-
-        if level >= 2 then
-            table.insert(ingredients, { "cryogenic-science-pack", 1 })
-        end
-
-        if level >= 3 then
-            table.insert(ingredients, { "promethium-science-pack", 1 })
-        end
-    end
-end
-
-local function get_research_ingredients(upgrade_type, level)
-    local researchPrerequisites = get_research_prerequisites(upgrade_type, level)
-    local ingredients = Tech.combined_ingredients(researchPrerequisites, {
+local function get_research_ingredients(upgrade_type, level, limit)
+    -- Base ingredients: cheap early tiers only need the starter packs.
+    local ingredients = {
         { "automation-science-pack", 1 },
         { "logistic-science-pack", 1 },
-        { "chemical-science-pack", 1 },
-        { "production-science-pack", 1 },
-        { "utility-science-pack", 1 },
-    })
-
-    add_SA_ingredients(upgrade_type, level, ingredients)
+    }
+    -- Progressively require later packs as the tier climbs (if the tool exists).
+    for _, pack in ipairs(science_ladder(upgrade_type, level, limit)) do
+        if data.raw["tool"][pack] then
+            ingredients[#ingredients + 1] = { pack, 1 }
+        end
+    end
     return table.unique_kv(ingredients)
 end
 
 local function get_research_limit(upgrade_type)
-    local limit = 999999
-    if upgrade_type == "roboport-robot-storage" then
-        limit = robot_storage_limit:get()
-    elseif upgrade_type == "roboport-material-storage" then
-        limit = material_storage_limit:get()
-    elseif upgrade_type == "roboport-construction-area" then
-        limit = construction_area_limit:get()
-    elseif upgrade_type == "roboport-logistic-area" then
-        limit = logistic_area_limit:get()
-    end
-    return math.max(research_minimum:get(), math.min(limit, research_maximum:get()))
+    -- Limits.logistical already applies the research_minimum/maximum clamps per axis.
+    return Limits.logistical[tech_to_key[upgrade_type]]
+end
+
+-- count = cost * (L ^ exponent); exponent is a startup setting (default 1.5).
+local function get_count_formula()
+    return settings.research_upgrade_cost:get() .. "*(L^" .. settings.research_cost_exponent:get() .. ")"
 end
 
 local function insert_unlock()
@@ -126,7 +128,7 @@ local function add_researches()
     }
 
     for _, upgrade_type in pairs(upgrade_names) do
-        limit = get_research_limit(upgrade_type)
+        local limit = get_research_limit(upgrade_type)
 
         for i = 1, limit do
             data:extend({
@@ -144,17 +146,17 @@ local function add_researches()
                     },
                     upgrade = true,
                     order = "c-k-f-a",
-                    prerequisites = get_research_prerequisites(upgrade_type, i),
+                    prerequisites = get_research_prerequisites(upgrade_type, i, limit),
                     effects = {
                         {
                             type = "nothing",
-                            effect_description = get_effect_description(upgrade_type),
+                            effect_description = { "heroic-roboports-effect.logistical", upgrade_type },
                         },
                     },
                     unit = {
-                        count_formula = research_upgrade_cost:get() .. "*(L)",
-                        time = research_upgrade_time:get(),
-                        ingredients = get_research_ingredients(upgrade_type, i),
+                        count_formula = get_count_formula(),
+                        time = settings.research_upgrade_time:get(),
+                        ingredients = get_research_ingredients(upgrade_type, i, limit),
                     },
                 },
             })

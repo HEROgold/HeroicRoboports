@@ -3,6 +3,7 @@ require("__heroic-library__.number")
 ---@type Settings
 local Settings = require("__heroic-library__.settings_manager").new("heroic-roboports")
 local startup = Settings:startup()
+local runtime = Settings:global()
 
 -- Energy Roboport Settings
 input_flow_limit_modifier = startup:default("input-flow-limit-modifier", 1.0, {
@@ -64,12 +65,19 @@ research_maximum = startup:default("research-maximum", 9, {
 research_upgrade_cost = startup:default("research-upgrade-cost", 500, {
     minimum = 1,
 })
+-- Exponent for the logistical research cost curve: count = cost * (L ^ exponent).
+research_cost_exponent = startup:default("research-cost-exponent", 1.5, {
+    minimum = 1.0,
+})
 research_upgrade_time = startup:default("research-upgrade-time", 60, {
     minimum = 1,
 })
 
--- Mod Settings
-upgrade_timer = startup:default("upgrade-timer", 8, {
+-- Mod Settings (runtime-global so the upgrade queue cadence can be tuned without a restart)
+upgrade_timer = runtime:default("upgrade-timer", 8, {
+    minimum = 1,
+})
+upgrade_batch_size = runtime:default("upgrade-batch-size", 20, {
     minimum = 1,
 })
 
@@ -113,9 +121,11 @@ return {
     research_minimum = research_minimum,
     research_maximum = research_maximum,
     research_upgrade_cost = research_upgrade_cost,
+    research_cost_exponent = research_cost_exponent,
     research_upgrade_time = research_upgrade_time,
 
     upgrade_timer = upgrade_timer,
+    upgrade_batch_size = upgrade_batch_size,
     show_items = show_items,
 
     energy_robot_slots = energy_robot_slots,

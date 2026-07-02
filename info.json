@@ -1,12 +1,12 @@
 {
     "name": "heroic-roboports",
-    "version": "2.4.2",
+    "version": "2.6.0",
     "title": "Heroic Roboports",
     "author": "HEROgold",
-    "factorio_version": "2.0",
+    "factorio_version": "2.1",
     "dependencies": [
-        "base >= 2.0",
-        "heroic-library >= 1.4.0",
+        "base >= 2.1",
+        "heroic-library >= 1.5.0",
         "? space-age",
         "? space-exploration",
         "? modules-t4",

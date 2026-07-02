@@ -1,4 +1,34 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.6.0
+Date: 2026-07-02
+  Changes:
+    - Updated for Factorio 2.1 (now requires base >= 2.1).
+    - Removed the manual Roboport Updater tool and shortcut; roboports are now tracked and
+      upgraded automatically, so the tool is no longer needed.
+    - Logistical roboport research is now science-anchored: higher tiers progressively require
+      later science packs, making top tiers an endgame investment.
+    - Added the research-cost-exponent setting (default 1.5): logistical research cost now
+      follows cost * L^exponent instead of a flat linear curve.
+    - Moved technology effect descriptions into locale files.
+---------------------------------------------------------------------------------------------------
+Version: 2.5.0
+Date: 2026-07-02
+  Changes:
+    - In short: big performance improvement, especially for games with many roboports.
+      Rewrote roboport tracking: all mod roboports are now recorded in a storage-backed registry,
+      seeded by a full surface scan on first install and kept in sync via build/removal events.
+    - Research now updates only the affected force's roboports from the registry (no full surface
+      rescan on every research), throttled through a batched upgrade queue.
+    - Added the upgrade-batch-size setting and made upgrade-timers to control how much and 
+      how often roboports are upgraded after research.
+  Bugfixes:
+    - Fixed hr-uninstall crashing; it now reverts all roboports to vanilla and suppresses
+      re-upgrades for 10 seconds.
+    - Fixed blueprint/ghost handling to use the correct inner_name when resolving ghosts.
+    - Fixed module tier detection to use the max tier per module type and no longer crash when
+      module types have differing tier counts.
+    - Guarded all entity replacements against failed creation.
+---------------------------------------------------------------------------------------------------
 Version: 2.4.3
 Date: ????
   Changes:

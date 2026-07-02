@@ -1,53 +1,55 @@
+require("__heroic-library__.number")
 local settings = require("settings")
+local modules = require("__heroic-library__.modules")
+local codec = require("name_codec")
 
-local efficiency = 0
-local productivity = 0
-local speed = 0
+--- Computes the per-axis level limits for both roboport families. These drive BOTH how many
+--- research technologies are generated and how many entity variants are pre-generated, so the
+--- two always match.
+---
+--- research_minimum / research_maximum act as clamps on the number of levels per axis:
+---   levels = clamp(detected_module_tiers, research_minimum, cap)
+--- where `cap = min(research_maximum, per-axis setting limit)`.
+--- - Remove all modules  -> detected 0 -> clamps up to research_minimum.
+--- - A mod adds 9 tiers  -> up to research_maximum (or the per-axis setting cap).
 
-for k, v in pairs(data.raw["module"]) do
-    local ss = k.sub(k, -2, -1)
-    local moduleLevel = tonumber(ss) -- "productivity-module-2" becomes '-2' when converting from string.
+local research_minimum = settings.research_minimum:get()
+local research_maximum = settings.research_maximum:get()
 
-    if moduleLevel == nil then -- level one modules don't seem to have a suffix. fix that here
-        moduleLevel = 1
-    end
-    if moduleLevel < 0 then -- invert numbers to positive.
-        moduleLevel = -moduleLevel
-    end
+-- Energy axes follow module tiers (per line), independently per axis.
+local detected = modules.max_tiers({ "efficiency", "productivity", "speed" })
+local energy_caps = {
+    efficiency = settings.energy_efficiency_limit:get(),
+    productivity = settings.energy_productivity_limit:get(),
+    speed = settings.energy_speed_limit:get(),
+}
 
-    local maximum = math.max(moduleLevel, 1)
-
-    if string.starts_with(k, "efficiency-module") then
-        efficiency = number.within_bounds(moduleLevel, 0, maximum)
-    end
-    if string.starts_with(k, "productivity-module") then
-        productivity = number.within_bounds(moduleLevel, 0, maximum)
-    end
-    if string.starts_with(k, "speed-module") then
-        speed = number.within_bounds(moduleLevel, 0, maximum)
-    end
+local energy = {}
+for _, axis in ipairs(codec.ENERGY_AXES) do
+    local cap = math.min(research_maximum, energy_caps[axis.key])
+    local minimum = math.min(research_minimum, cap)
+    energy[axis.key] = number.within_bounds(detected[axis.module] or 0, minimum, cap)
 end
 
--- the following mods can't be found using data.raw["module"], so we set the limits manually
-if mods["Module-Rebalance"] then
-    efficiency, productivity, speed = 7, 7, 7
-end
-if mods["space-exploration"] then
-    efficiency, productivity, speed = 9, 9, 9
+-- Logistical axes have no natural module anchor: driven by their setting limits, clamped.
+local logistical_caps = {
+    construction_area = settings.construction_area_limit:get(),
+    logistic_area = settings.logistic_area_limit:get(),
+    robot_storage = settings.robot_storage_limit:get(),
+    material_storage = settings.material_storage_limit:get(),
+}
+
+local logistical = {}
+for _, axis in ipairs(codec.LOGISTICAL_AXES) do
+    logistical[axis.key] = math.max(research_minimum, math.min(logistical_caps[axis.key], research_maximum))
 end
 
--- Respect the setting a user has provided
-efficiency_limit = math.min(settings.energy_efficiency_limit:get(), efficiency)
-productivity_limit = math.min(settings.energy_productivity_limit:get(), productivity)
-speed_limit = math.min(settings.energy_speed_limit:get(), speed)
-
-Limits = {}
-Limits["efficiency"] = efficiency_limit
-Limits["productivity"] = productivity_limit
-Limits["speed"] = speed_limit
-
-if not ((efficiency_limit == productivity_limit) and (productivity_limit == speed_limit)) then
-    error("RoboportUpgrades: The amount of efficiency, productivity and speed modules do not match.")
-end
+---@class RoboportLimits
+---@field energy table<string, integer>
+---@field logistical table<string, integer>
+Limits = {
+    energy = energy,
+    logistical = logistical,
+}
 
 return Limits

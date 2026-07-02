@@ -1,7 +1,7 @@
 -- Cache for generated charging offsets to avoid recalculation
 local charging_offsets_cache = {}
 
-function generate_charging_offsets(n)
+local function generate_charging_offsets(n)
     if charging_offsets_cache[n] then
         return charging_offsets_cache[n]
     end
