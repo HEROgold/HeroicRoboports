@@ -65,10 +65,13 @@ research_maximum = startup:default("research-maximum", 9, {
 research_upgrade_cost = startup:default("research-upgrade-cost", 500, {
     minimum = 1,
 })
--- Exponent for the logistical research cost curve: count = cost * (L ^ exponent).
-research_cost_exponent = startup:default("research-cost-exponent", 1.5, {
-    minimum = 1.0,
+-- Multiplier for the logistical research cost curve: count = cost * (1 + level * multiplier).
+research_cost_multiplier = startup:default("research-cost-multiplier", 2, {
+    minimum = 0,
 })
+-- Seed for deterministically assigning extra (other-mod) science packs to higher logistical
+-- tiers. Shared across multiplayer clients so every client generates the same tech tree.
+research_tier_seed = startup:default("research-tier-seed", 0, {})
 research_upgrade_time = startup:default("research-upgrade-time", 60, {
     minimum = 1,
 })
@@ -121,7 +124,8 @@ return {
     research_minimum = research_minimum,
     research_maximum = research_maximum,
     research_upgrade_cost = research_upgrade_cost,
-    research_cost_exponent = research_cost_exponent,
+    research_cost_multiplier = research_cost_multiplier,
+    research_tier_seed = research_tier_seed,
     research_upgrade_time = research_upgrade_time,
 
     upgrade_timer = upgrade_timer,

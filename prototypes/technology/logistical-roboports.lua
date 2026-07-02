@@ -4,6 +4,7 @@ local Tech = require("__heroic-library__.technology")
 local settings = require("settings")
 local codec = require("name_codec")
 local Limits = require("limits")
+local prng = require("helpers.prng")
 
 -- Map each logistical technology name to its Limits.logistical axis key.
 local tech_to_key = {}
@@ -11,7 +12,7 @@ for _, axis in ipairs(codec.LOGISTICAL_AXES) do
     tech_to_key[axis.tech] = axis.key
 end
 
--- Space Age planet pack anchored to each logistical axis.
+-- Space Age planet pack anchored to each logistical axis (tier 1 gate under Space Age).
 local axis_science_pack = {
     ["roboport-construction-area"] = "metallurgic-science-pack",
     ["roboport-logistic-area"] = "electromagnetic-science-pack",
@@ -19,49 +20,87 @@ local axis_science_pack = {
     ["roboport-material-storage"] = "agricultural-science-pack",
 }
 
+-- Base/SA science packs the ladder places explicitly; everything else counts as "other-mod".
+local KNOWN_PACKS = {
+    ["automation-science-pack"] = true,
+    ["logistic-science-pack"] = true,
+    ["military-science-pack"] = true,
+    ["chemical-science-pack"] = true,
+    ["production-science-pack"] = true,
+    ["utility-science-pack"] = true,
+    ["space-science-pack"] = true,
+    ["metallurgic-science-pack"] = true,
+    ["electromagnetic-science-pack"] = true,
+    ["agricultural-science-pack"] = true,
+    ["cryogenic-science-pack"] = true,
+    ["promethium-science-pack"] = true,
+}
+
+-- Science packs added by other mods, in canonical (sorted) order so the shuffle is deterministic.
+local function other_mod_science_packs()
+    local pool = {}
+    for name, tool in pairs(data.raw["tool"] or {}) do
+        if not KNOWN_PACKS[name] and (tool.subgroup == "science-pack" or string.find(name, "%-science%-pack$")) then
+            pool[#pool + 1] = name
+        end
+    end
+    table.sort(pool)
+    return pool
+end
+
+-- Precompute, per axis, a deterministic shuffle of the other-mod pool seeded by a startup
+-- setting, so every multiplayer client generates the same tech tree. Taking the first N of a
+-- fixed shuffle gives a stable, cumulative selection as tiers climb.
+local axis_extra_packs = {}
+do
+    local pool = other_mod_science_packs()
+    local seed = settings.research_tier_seed:get()
+    for i, axis in ipairs(codec.LOGISTICAL_AXES) do
+        axis_extra_packs[axis.tech] = prng.shuffled(pool, seed * 1000003 + i)
+    end
+end
+
 local function get_research_name(upgrade_name, level)
     return upgrade_name .. utilities.get_level_suffix(level)
 end
 
---- Science-anchored ladder: returns the science packs a given tier requires beyond the base
---- automation/logistic packs. Thresholds are relative to the axis' tier limit, so the ladder
---- spreads across however many tiers exist and top tiers become an endgame investment. Each
---- pack name doubles as both the unlocking technology (prerequisite) and the tool (ingredient).
+--- The science packs a tier requires beyond the always-present automation/logistic packs,
+--- cumulative. Logistical upgrades are a deliberately late-game progression:
+---   With Space Age:    T1 planet pack, T2 +cryogenic, T3+ +promethium, T4+ +other-mod packs.
+---   Without Space Age: T1 utility,     T2 +space,     T3+ +other-mod packs.
 ---@param upgrade_name string
 ---@param level integer
----@param limit integer
 ---@return string[]
-local function science_ladder(upgrade_name, level, limit)
+local function science_ladder(upgrade_name, level)
     local packs = {}
-    -- Reaches `threshold` fraction of the limit (never before tier 2).
-    local function at(threshold)
-        return level >= math.max(2, math.ceil(threshold * limit))
-    end
-
-    -- Base-game ladder.
-    if at(0.25) then
-        packs[#packs + 1] = "chemical-science-pack"
-    end
-    if at(0.45) then
-        packs[#packs + 1] = "production-science-pack"
-    end
-    if at(0.65) then
-        packs[#packs + 1] = "utility-science-pack"
-    end
-
-    -- Space Age ladder.
+    local extra_start
     if mods["space-age"] then
-        if at(0.50) and axis_science_pack[upgrade_name] then
+        if level >= 1 then
             packs[#packs + 1] = axis_science_pack[upgrade_name]
         end
-        if at(0.75) then
-            packs[#packs + 1] = "space-science-pack"
-        end
-        if at(0.90) then
+        if level >= 2 then
             packs[#packs + 1] = "cryogenic-science-pack"
         end
-        if level >= limit then
+        if level >= 3 then
             packs[#packs + 1] = "promethium-science-pack"
+        end
+        extra_start = 4
+    else
+        if level >= 1 then
+            packs[#packs + 1] = "utility-science-pack"
+        end
+        if level >= 2 then
+            packs[#packs + 1] = "space-science-pack"
+        end
+        extra_start = 3
+    end
+
+    -- Tiers past the last named milestone additionally pull other-mod packs (one more per tier).
+    if level >= extra_start then
+        local shuffled = axis_extra_packs[upgrade_name] or {}
+        local count = level - extra_start + 1
+        for i = 1, math.min(count, #shuffled) do
+            packs[#packs + 1] = shuffled[i]
         end
     end
 
@@ -69,7 +108,7 @@ local function science_ladder(upgrade_name, level, limit)
 end
 
 ---@return table<TechnologyID>
-local function get_research_prerequisites(upgrade_name, level, limit)
+local function get_research_prerequisites(upgrade_name, level)
     ---@type table<TechnologyID>
     local prerequisites = {}
     if level == 1 then
@@ -78,9 +117,9 @@ local function get_research_prerequisites(upgrade_name, level, limit)
         prerequisites[#prerequisites + 1] = get_research_name(upgrade_name, level - 1)
     end
 
-    -- Anchor higher tiers behind the science-pack technologies (when they exist).
+    -- A pack can only be a prerequisite if a same-named technology exists to unlock it.
     local techs = data.raw["technology"] or {}
-    for _, pack in ipairs(science_ladder(upgrade_name, level, limit)) do
+    for _, pack in ipairs(science_ladder(upgrade_name, level)) do
         if techs[pack] then
             prerequisites[#prerequisites + 1] = pack
         end
@@ -88,16 +127,17 @@ local function get_research_prerequisites(upgrade_name, level, limit)
     return prerequisites
 end
 
-local function get_research_ingredients(upgrade_type, level, limit)
-    -- Base ingredients: cheap early tiers only need the starter packs.
+local function get_research_ingredients(upgrade_type, level)
     local ingredients = {
         { "automation-science-pack", 1 },
         { "logistic-science-pack", 1 },
     }
-    -- Progressively require later packs as the tier climbs (if the science pack exists).
+    -- Require every gating pack that exists (known packs always have a same-named tech;
+    -- other-mod packs come from the tool pool). This keeps ingredients in sync with the gates.
+    local techs = data.raw["technology"] or {}
     local tools = data.raw["tool"] or {}
-    for _, pack in ipairs(science_ladder(upgrade_type, level, limit)) do
-        if tools[pack] then
+    for _, pack in ipairs(science_ladder(upgrade_type, level)) do
+        if techs[pack] or tools[pack] then
             ingredients[#ingredients + 1] = { pack, 1 }
         end
     end
@@ -109,9 +149,9 @@ local function get_research_limit(upgrade_type)
     return Limits.logistical[tech_to_key[upgrade_type]]
 end
 
--- count = cost * (L ^ exponent); exponent is a startup setting (default 1.5).
+-- count = cost * (1 + level * multiplier); multiplier is a startup setting (default 2).
 local function get_count_formula()
-    return settings.research_upgrade_cost:get() .. "*(L^" .. settings.research_cost_exponent:get() .. ")"
+    return settings.research_upgrade_cost:get() .. "*(1 + L*" .. settings.research_cost_multiplier:get() .. ")"
 end
 
 local function insert_unlock()
@@ -148,7 +188,7 @@ local function add_researches()
                     },
                     upgrade = true,
                     order = "c-k-f-a",
-                    prerequisites = get_research_prerequisites(upgrade_type, i, limit),
+                    prerequisites = get_research_prerequisites(upgrade_type, i),
                     effects = {
                         {
                             type = "nothing",
@@ -158,7 +198,7 @@ local function add_researches()
                     unit = {
                         count_formula = get_count_formula(),
                         time = settings.research_upgrade_time:get(),
-                        ingredients = get_research_ingredients(upgrade_type, i, limit),
+                        ingredients = get_research_ingredients(upgrade_type, i),
                     },
                 },
             })

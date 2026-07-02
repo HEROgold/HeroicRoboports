@@ -5,10 +5,15 @@ Date: 2026-07-02
     - Updated for Factorio 2.1 (now requires base >= 2.1).
     - Removed the manual Roboport Updater tool and shortcut; roboports are now tracked and
       upgraded automatically, so the tool is no longer needed.
-    - Logistical roboport research is now science-anchored: higher tiers progressively require
-      later science packs, making top tiers an endgame investment.
-    - Added the research-cost-exponent setting (default 1.5): logistical research cost now
-      follows cost * L^exponent instead of a flat linear curve.
+    - Logistical roboport upgrades are now a late-game progression. With Space Age: tier 1
+      requires the axis's planet science pack, tier 2 adds Aquilo (cryogenic) science, tier 3+
+      adds promethium science, and tier 4+ additionally require science packs from other mods.
+      Without Space Age: tier 1 requires utility science, tier 2 adds space science, tier 3+
+      adds other-mod packs. Each tier's ingredients now include its prerequisite science packs.
+    - Added the research-cost-multiplier setting (default 2): logistical research cost scales as
+      cost * (1 + level * multiplier).
+    - Added the research-tier-seed setting: deterministically assigns other-mod science packs to
+      higher logistical tiers, consistent across multiplayer clients.
     - Moved technology effect descriptions into locale files.
 ---------------------------------------------------------------------------------------------------
 Version: 2.5.0
