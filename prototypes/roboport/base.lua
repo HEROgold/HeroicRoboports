@@ -42,7 +42,7 @@ function BaseRoboport:recipes()
                 { type = "item", name = "steel-plate", amount = 100 },
             },
             results = { { type = "item", name = self.name, amount = 1 } },
-            category = "crafting",
+            categories = { "crafting" },
             unlock_results = true,
         },
     }

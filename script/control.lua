@@ -77,22 +77,30 @@ local function handle_built(entity)
     end
 end
 
-script.on_event(built_events, function(event)
-    handle_built(event.entity)
-end, built_filter)
+---@param event EventData.on_player_mined_entity|EventData.on_robot_mined_entity|EventData.on_entity_died|EventData.script_raised_destroy
+local function handle_removed(event)
+    local entity = event.entity
+    if not entities.is_valid(entity) then
+        return
+    end
+    roboports.untrack(entity.unit_number)
+end
+
+-- Filters can only be applied when registering a single event id, so register per event.
+for _, ev in ipairs(built_events) do
+    script.on_event(ev, function(event)
+        handle_built(event.entity)
+    end, built_filter)
+end
 
 -- Cloning is rare (editor / super-force); filter by roboport type only.
 script.on_event(defines.events.on_entity_cloned, function(event)
     handle_built(event.destination)
 end, roboport_filter)
 
-script.on_event(removed_events, function(event)
-    local entity = event.entity
-    if not entities.is_valid(entity) then
-        return
-    end
-    roboports.untrack(entity.unit_number)
-end, roboport_filter)
+for _, ev in ipairs(removed_events) do
+    script.on_event(ev, handle_removed, roboport_filter)
+end
 
 -- Research ------------------------------------------------------------------------------------
 

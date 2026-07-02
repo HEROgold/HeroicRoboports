@@ -79,8 +79,9 @@ local function get_research_prerequisites(upgrade_name, level, limit)
     end
 
     -- Anchor higher tiers behind the science-pack technologies (when they exist).
+    local techs = data.raw["technology"] or {}
     for _, pack in ipairs(science_ladder(upgrade_name, level, limit)) do
-        if data.raw["technology"][pack] then
+        if techs[pack] then
             prerequisites[#prerequisites + 1] = pack
         end
     end
@@ -93,9 +94,10 @@ local function get_research_ingredients(upgrade_type, level, limit)
         { "automation-science-pack", 1 },
         { "logistic-science-pack", 1 },
     }
-    -- Progressively require later packs as the tier climbs (if the tool exists).
+    -- Progressively require later packs as the tier climbs (if the science pack exists).
+    local tools = data.raw["tool"] or {}
     for _, pack in ipairs(science_ladder(upgrade_type, level, limit)) do
-        if data.raw["tool"][pack] then
+        if tools[pack] then
             ingredients[#ingredients + 1] = { pack, 1 }
         end
     end
