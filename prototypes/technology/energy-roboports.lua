@@ -12,10 +12,11 @@ local module_names = {
 }
 
 local function get_research_name(module_type, level)
-    return "roboport-" .. module_type .. utilities.get_level_suffix(level)
+    return Tech.leveled_name("roboport-" .. module_type, level)
 end
 
 -- the module technology is the 1st prerequisite
+--- Get the prerequisites for a module research, including the module technology itself.
 ---@return table<TechnologyID>
 local function get_research_prerequisites(module_type, level)
     local prerequisites = nil
@@ -42,6 +43,10 @@ local get_tech_sprite = function(module_type, level)
     )
 end
 
+--- Returns a table of all the ingredients required to research a technology, including all prerequisites.
+--- If the technology has no prerequisites, it will return the default ingredients.
+---@param module_type string
+---@param level number
 local function get_module_research_ingredients(module_type, level)
     local researchPrerequisites = get_research_prerequisites(module_type, level)
     return Tech.combined_ingredients(researchPrerequisites, {
@@ -52,45 +57,24 @@ local function get_module_research_ingredients(module_type, level)
     })
 end
 
-local function insert_unlock()
-    table.insert(
-        data.raw["technology"]["construction-robotics"].effects,
-        { type = "unlock-recipe", recipe = "energy-roboport" }
-    )
-end
+Tech.unlock_recipe("construction-robotics", "energy-roboport")
 
-local function add_module_upgrade_research()
-    for _, module_type in pairs(module_names) do
-        -- Limits.energy already applies the research_minimum/maximum + per-axis clamps.
-        local limit = Limits.energy[module_type]
-
-        for i = 1, limit do
-            data:extend({
-                {
-                    type = "technology",
-                    name = get_research_name(module_type, i),
-                    icon_size = 256,
-                    icon_mipmaps = 4,
-                    icons = get_tech_sprite(module_type, i),
-                    upgrade = true,
-                    order = "c-k-f-a",
-                    prerequisites = get_research_prerequisites(module_type, i),
-                    effects = {
-                        {
-                            type = "nothing",
-                            effect_description = { "heroic-roboports-effect.energy", module_type },
-                        },
-                    },
-                    unit = {
-                        count_formula = settings.research_upgrade_cost:get() .. "*(L)",
-                        time = settings.research_upgrade_time:get(),
-                        ingredients = get_module_research_ingredients(module_type, i),
-                    },
-                },
-            })
-        end
-    end
-end
-
-insert_unlock()
-add_module_upgrade_research()
+Tech.add_upgrade_ladder({
+    axes = module_names,
+    -- Limits.energy already applies the research_minimum/maximum + per-axis clamps.
+    get_limit = function(module_type) return Limits.energy[module_type] end,
+    get_name = get_research_name,
+    get_icons = get_tech_sprite,
+    get_prerequisites = get_research_prerequisites,
+    get_effects = function(module_type)
+        return {
+            {
+                type = "nothing",
+                effect_description = { "heroic-roboports-effect.energy", module_type },
+            },
+        }
+    end,
+    get_count_formula = function() return settings.research_upgrade_cost:get() .. "*(L)" end,
+    get_time = function() return settings.research_upgrade_time:get() end,
+    get_ingredients = get_module_research_ingredients,
+})

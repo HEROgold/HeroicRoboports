@@ -61,7 +61,7 @@ do
 end
 
 local function get_research_name(upgrade_name, level)
-    return upgrade_name .. utilities.get_level_suffix(level)
+    return Tech.leveled_name(upgrade_name, level)
 end
 
 --- The science packs a tier requires beyond the always-present automation/logistic packs,
@@ -128,12 +128,17 @@ local function get_research_prerequisites(upgrade_name, level)
 end
 
 local function get_research_ingredients(upgrade_type, level)
-    local ingredients = {
+    -- Inherit the base packs from the prerequisite chain (the previous tier, or logistic-robotics
+    -- at tier 1), falling back to automation/logistic if nothing contributes.
+    local prerequisites = get_research_prerequisites(upgrade_type, level)
+    local ingredients = Tech.combined_ingredients(prerequisites, {
         { "automation-science-pack", 1 },
         { "logistic-science-pack", 1 },
-    }
-    -- Require every gating pack that exists (known packs always have a same-named tech;
-    -- other-mod packs come from the tool pool). This keeps ingredients in sync with the gates.
+    })
+
+    -- On top of the inherited base, require every gating pack this tier introduces (known packs
+    -- always have a same-named tech; other-mod packs come from the tool pool). This is the science
+    -- ladder machinery that keeps the ingredients in sync with the prerequisite gates for late levels.
     local techs = data.raw["technology"] or {}
     local tools = data.raw["tool"] or {}
     for _, pack in ipairs(science_ladder(upgrade_type, level)) do
@@ -154,57 +159,36 @@ local function get_count_formula()
     return settings.research_upgrade_cost:get() .. "*(1 + L*" .. settings.research_cost_multiplier:get() .. ")"
 end
 
-local function insert_unlock()
-    table.insert(
-        data.raw["technology"]["logistic-robotics"].effects,
-        { type = "unlock-recipe", recipe = "logistical-roboport" }
-    )
-end
+Tech.unlock_recipe("logistic-robotics", "logistical-roboport")
 
-local function add_researches()
-    local upgrade_names = {
+Tech.add_upgrade_ladder({
+    axes = {
         "roboport-construction-area",
         "roboport-logistic-area",
         "roboport-robot-storage",
         "roboport-material-storage",
-    }
-
-    for _, upgrade_type in pairs(upgrade_names) do
-        local limit = get_research_limit(upgrade_type)
-
-        for i = 1, limit do
-            data:extend({
-                {
-                    type = "technology",
-                    name = get_research_name(upgrade_type, i),
-                    icon_size = 256,
-                    icon_mipmaps = 4,
-                    icons = {
-                        {
-                            icon = "__base__/graphics/technology/robotics.png",
-                            icon_size = 256,
-                            icon_mipmaps = 4,
-                        },
-                    },
-                    upgrade = true,
-                    order = "c-k-f-a",
-                    prerequisites = get_research_prerequisites(upgrade_type, i),
-                    effects = {
-                        {
-                            type = "nothing",
-                            effect_description = { "heroic-roboports-effect.logistical", upgrade_type },
-                        },
-                    },
-                    unit = {
-                        count_formula = get_count_formula(),
-                        time = settings.research_upgrade_time:get(),
-                        ingredients = get_research_ingredients(upgrade_type, i),
-                    },
-                },
-            })
-        end
-    end
-end
-
-insert_unlock()
-add_researches()
+    },
+    get_limit = get_research_limit,
+    get_name = get_research_name,
+    get_icons = function()
+        return {
+            {
+                icon = "__base__/graphics/technology/robotics.png",
+                icon_size = 256,
+                icon_mipmaps = 4,
+            },
+        }
+    end,
+    get_prerequisites = get_research_prerequisites,
+    get_effects = function(upgrade_type)
+        return {
+            {
+                type = "nothing",
+                effect_description = { "heroic-roboports-effect.logistical", upgrade_type },
+            },
+        }
+    end,
+    get_count_formula = get_count_formula,
+    get_time = function() return settings.research_upgrade_time:get() end,
+    get_ingredients = get_research_ingredients,
+})

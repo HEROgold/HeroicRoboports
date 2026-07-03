@@ -3,9 +3,26 @@
 local BaseRoboport = {}
 BaseRoboport.__index = BaseRoboport
 
+-- Cached deep copy of the vanilla roboport prototype. Deep-copying it per variant (thousands of
+-- times, for the logistical 4-axis cross product) is what hangs the data stage, so we copy the
+-- heavy prototype once and shallow-clone it per variant. The shared subtables (graphics, sounds,
+-- energy_source, etc.) are only ever read after creation, and `data:extend` serializes each
+-- prototype independently, so sharing them by reference is safe.
+local template
+
 ---@return self
 function BaseRoboport.new()
-    return setmetatable(table.deepcopy(data.raw["roboport"]["roboport"]), BaseRoboport)
+    if not template then
+        template = table.deepcopy(data.raw["roboport"]["roboport"])
+    end
+    local self = {}
+    for key, value in pairs(template) do
+        self[key] = value
+    end
+    -- `minable.result` is the only subtable mutated in place by subclasses, so give each variant
+    -- its own copy; everything else the subclasses set is a top-level reassignment.
+    self.minable = table.deepcopy(template.minable)
+    return setmetatable(self, BaseRoboport)
 end
 
 ---@abstract
