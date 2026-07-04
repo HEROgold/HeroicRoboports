@@ -18,6 +18,7 @@ function EnergyRoboport.new(levels)
     local self = setmetatable(BaseRoboport.new(), EnergyRoboport) --[[@as EnergyRoboport]]
     self._name = "energy-roboport"
     self.minable.result = self._name
+    self:apply_icon_overlay("__base__/graphics/icons/signal/signal-lightning.png")
 
     self.levels = LevelSet.new(levels or { efficiency = 0, productivity = 0, speed = 0 }, Limits.energy)
 

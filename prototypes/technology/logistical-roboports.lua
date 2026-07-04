@@ -1,5 +1,6 @@
 require("__heroic-library__.utilities")
 require("__heroic-library__.table")
+require("__heroic-library__.sprites")
 local Tech = require("__heroic-library__.technology")
 local settings = require("settings")
 local codec = require("name_codec")
@@ -159,6 +160,15 @@ local function get_count_formula()
     return settings.research_upgrade_cost:get() .. "*(1 + L*" .. settings.research_cost_multiplier:get() .. ")"
 end
 
+-- A distinct vanilla overlay per logistical upgrade axis, so the four ladders are told apart in the
+-- tech tree (mirrors how the energy ladder overlays module icons on the robotics tech sprite).
+local axis_overlay = {
+    ["roboport-construction-area"] = "__base__/graphics/icons/construction-robot.png",
+    ["roboport-logistic-area"] = "__base__/graphics/icons/logistic-robot.png",
+    ["roboport-robot-storage"] = "__base__/graphics/icons/signal/signal-stack-size.png",
+    ["roboport-material-storage"] = "__base__/graphics/icons/repair-pack.png",
+}
+
 Tech.unlock_recipe("logistic-robotics", "logistical-roboport")
 
 Tech.add_upgrade_ladder({
@@ -170,14 +180,8 @@ Tech.add_upgrade_ladder({
     },
     get_limit = get_research_limit,
     get_name = get_research_name,
-    get_icons = function()
-        return {
-            {
-                icon = "__base__/graphics/technology/robotics.png",
-                icon_size = 256,
-                icon_mipmaps = 4,
-            },
-        }
+    get_icons = function(axis)
+        return sprite_add_icon("__base__/graphics/technology/robotics.png", axis_overlay[axis])
     end,
     get_prerequisites = get_research_prerequisites,
     get_effects = function(upgrade_type)

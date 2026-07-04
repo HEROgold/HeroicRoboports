@@ -1,3 +1,5 @@
+require("__heroic-library__.sprites")
+
 ---@class BaseRoboport: data.RoboportPrototype
 ---@field _name string Internal name for the roboport.
 local BaseRoboport = {}
@@ -9,6 +11,25 @@ BaseRoboport.__index = BaseRoboport
 -- energy_source, etc.) are only ever read after creation, and `data:extend` serializes each
 -- prototype independently, so sharing them by reference is safe.
 local template
+
+-- Cache of layered icon tables keyed by overlay path. There are only two overlays (one per
+-- variant type) but thousands of variants, so we build each layered table once and share it.
+-- Icons are only read after creation and `data:extend` serializes each prototype independently,
+-- so sharing them by reference is safe (same rationale as the shared template above).
+local icons_cache = {}
+
+---@param overlay data.FileName Small vanilla icon layered onto the roboport base icon.
+---@return data.IconData[]
+local function build_icons(overlay)
+    if not icons_cache[overlay] then
+        icons_cache[overlay] = sprite_add_icon(
+            "__base__/graphics/icons/roboport.png",
+            overlay,
+            { base_size = 64, base_mipmaps = 4, overlay_size = 64, overlay_mipmaps = 4, scale = 0.5, shift = { 8, 8 } }
+        )
+    end
+    return icons_cache[overlay]
+end
 
 ---@return self
 function BaseRoboport.new()
@@ -31,20 +52,31 @@ function BaseRoboport:get_suffix()
     error("get_suffix() not implemented for " .. tostring(self))
 end
 
+--- Layer a small distinguishing vanilla icon onto the shared roboport base icon, so the energy
+--- and logistical variants can be told apart at a glance. Applied to both the entity (this table)
+--- and the item it produces (see `items()`).
+---@param overlay data.FileName Small vanilla icon, e.g. "__base__/graphics/icons/storage-chest.png".
+function BaseRoboport:apply_icon_overlay(overlay)
+    self.icons = build_icons(overlay)
+end
+
 function BaseRoboport:items()
-    ---@type data.ItemPrototype[]
-    return {
-        {
-            type = "item",
-            name = self.name,
-            icon = self.icon,
-            icon_size = self.icon_size,
-            subgroup = self.subgroup,
-            order = self.order,
-            place_result = self.name,
-            stack_size = data.raw["item"]["roboport"].stack_size,
-        },
+    ---@type data.ItemPrototype
+    local item = {
+        type = "item",
+        name = self.name,
+        subgroup = self.subgroup,
+        order = self.order,
+        place_result = self.name,
+        stack_size = data.raw["item"]["roboport"].stack_size,
     }
+    if self.icons then
+        item.icons = self.icons
+    else
+        item.icon = self.icon
+        item.icon_size = self.icon_size
+    end
+    return { item }
 end
 
 function BaseRoboport:recipes()

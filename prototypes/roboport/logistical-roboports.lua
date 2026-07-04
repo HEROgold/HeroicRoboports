@@ -18,6 +18,7 @@ function LogisticalRoboport.new(levels)
     local self = setmetatable(BaseRoboport.new(), LogisticalRoboport) --[[@as LogisticalRoboport]]
     self._name = "logistical-roboport"
     self.minable.result = self._name
+    self:apply_icon_overlay("__base__/graphics/icons/storage-chest.png")
 
     self.levels = LevelSet.new(levels or {
         construction_area = 0,
