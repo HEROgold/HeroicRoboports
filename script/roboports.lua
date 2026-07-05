@@ -1,5 +1,5 @@
 require("__heroic-library__.string")
-local entities = require("__heroic-library__.entities")
+local Entity = require("__heroic-library__.entity")
 local EntityRegistry = require("__heroic-library__.entity_registry")
 local WorkQueue = require("__heroic-library__.work_queue")
 local settings = require("settings")
@@ -112,8 +112,9 @@ end
 function M.uninstall()
     for _, surface in pairs(game.surfaces) do
         for _, entity in pairs(surface.find_entities_filtered({ type = "roboport" })) do
-            if entities.is_valid(entity) and is_mod_roboport(entity) then
-                entities.replace(entity, "roboport")
+            local e = Entity.new(entity)
+            if e and e:is_valid() and is_mod_roboport(entity) then
+                e:replace("roboport")
             end
         end
     end
@@ -128,12 +129,13 @@ function M.reset_entities()
     storage.roboport_upgrade_queue = {}
     for _, surface in pairs(game.surfaces) do
         for _, entity in pairs(surface.find_entities_filtered({ type = "roboport" })) do
-            if entities.is_valid(entity) and is_mod_roboport(entity) then
+            local e = Entity.new(entity)
+            if e and e:is_valid() and is_mod_roboport(entity) then
                 local family = Upgrader.family_for(entity.name)
                 local base = family == "energy" and "energy-roboport" or "logistical-roboport"
-                local created = entities.replace(entity, base)
+                local created = e:replace(base)
                 if created then
-                    M.registry:add(created)
+                    M.registry:add(created:unwrap())
                 end
             end
         end

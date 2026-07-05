@@ -2,7 +2,7 @@ require("__heroic-library__.utilities")
 require("__heroic-library__.string")
 require("__heroic-library__.number")
 
-local entities = require("__heroic-library__.entities")
+local Entity = require("__heroic-library__.entity")
 local roboports = require("script.roboports")
 local Upgrader = require("script.upgrader")
 local GhostResolver = Upgrader.GhostResolver
@@ -65,10 +65,11 @@ end)
 
 ---@param entity LuaEntity|nil
 local function handle_built(entity)
-    if not entities.is_valid(entity) then
+    local e = Entity.new(entity)
+    if not e or not e:is_valid() then
         return
     end
-    if entities.is_ghost(entity) then
+    if e:is_ghost() then
         GhostResolver.resolve(entity)
         return
     end
@@ -80,7 +81,8 @@ end
 ---@param event EventData.on_player_mined_entity|EventData.on_robot_mined_entity|EventData.on_entity_died|EventData.script_raised_destroy
 local function handle_removed(event)
     local entity = event.entity
-    if not entities.is_valid(entity) then
+    local e = Entity.new(entity)
+    if not e or not e:is_valid() then
         return
     end
     roboports.untrack(entity.unit_number)

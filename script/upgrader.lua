@@ -1,11 +1,11 @@
 require("__heroic-library__.string")
-local entities = require("__heroic-library__.entities")
+local Entity = require("__heroic-library__.entity")
 local codec = require("name_codec")
 local levels = require("helpers.levels")
 
 --- Pure upgrade logic (no storage/registry bookkeeping — the caller handles that).
 --- Resolves the correct variant name for a roboport given its force's researched levels and
---- performs the swap via the library's nil-guarded `entities.replace`.
+--- performs the swap via the library's nil-guarded `Entity:replace`.
 local Upgrader = {}
 
 ---@param name string
@@ -36,14 +36,16 @@ end
 ---@param entity LuaEntity
 ---@return LuaEntity|nil
 function Upgrader.upgrade(entity)
-    if not entities.is_valid(entity) then
+    local e = Entity.new(entity)
+    if not e or not e:is_valid() then
         return nil
     end
     local target = Upgrader.target_name(entity)
     if not target or entity.name == target then
         return nil
     end
-    return entities.replace(entity, target)
+    local created = e:replace(target)
+    return created and created:unwrap() or nil
 end
 
 --- Resolves ghosts of an upgraded variant back to the base family ghost, so blueprinted
@@ -53,7 +55,8 @@ local GhostResolver = {}
 ---@param ghost LuaEntity
 ---@return LuaEntity|nil
 function GhostResolver.resolve(ghost)
-    if not entities.is_valid(ghost) or not entities.is_ghost(ghost) then
+    local g = Entity.new(ghost)
+    if not g or not g:is_valid() or not g:is_ghost() then
         return nil
     end
     local family = Upgrader.family_for(ghost.ghost_name)
@@ -64,7 +67,8 @@ function GhostResolver.resolve(ghost)
     if ghost.ghost_name == base_name then
         return nil
     end
-    return entities.replace_ghost(ghost, base_name)
+    local created = g:replace_ghost(base_name)
+    return created and created:unwrap() or nil
 end
 
 Upgrader.GhostResolver = GhostResolver
