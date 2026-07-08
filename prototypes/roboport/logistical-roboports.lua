@@ -43,6 +43,16 @@ function LogisticalRoboport.new(levels)
     return self
 end
 
+function LogisticalRoboport:recipes()
+    local super = BaseRoboport.recipes(self)
+    for _, recipe in ipairs(super) do
+        if not recipe.ingredients then goto continue end
+        table.insert(recipe.ingredients, { type = "item", name = "storage-chest", amount = 1 })
+        ::continue::
+    end
+    return super
+end
+
 function LogisticalRoboport:get_suffix()
     return codec.logistical:suffix(self.levels:values())
 end

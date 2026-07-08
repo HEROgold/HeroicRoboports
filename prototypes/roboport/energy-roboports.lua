@@ -35,6 +35,17 @@ function EnergyRoboport.new(levels)
     return self
 end
 
+function EnergyRoboport:recipes()
+    local super = BaseRoboport.recipes(self)
+    for _, recipe in ipairs(super) do
+        if not recipe.ingredients then goto continue end
+        table.insert(recipe.ingredients, { type = "item", name = "battery", amount = 75 })
+        ::continue::
+    end
+    return super
+end
+
+
 function EnergyRoboport:get_suffix()
     return codec.energy:suffix(self.levels:values())
 end

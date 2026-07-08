@@ -79,6 +79,7 @@ function BaseRoboport:items()
     return { item }
 end
 
+--- @return data.RecipePrototype[]
 function BaseRoboport:recipes()
     ---@type data.RecipePrototype[]
     return {
@@ -88,7 +89,7 @@ function BaseRoboport:recipes()
             enabled = false,
             ingredients = {
                 { type = "item", name = "roboport", amount = 1 },
-                { type = "item", name = "steel-plate", amount = 100 },
+                { type = "item", name = "electronic-circuit", amount = 25 },
             },
             results = { { type = "item", name = self.name, amount = 1 } },
             categories = { "crafting" },
