@@ -1,6 +1,6 @@
 require("__heroic-library__.utilities")
 require("__heroic-library__.table")
-require("__heroic-library__.sprites")
+local Sprites = require("__heroic-library__.sprites")
 local Tech = require("__heroic-library__.technology")
 local settings = require("settings")
 local codec = require("name_codec")
@@ -181,7 +181,7 @@ Tech.add_upgrade_ladder({
     get_limit = get_research_limit,
     get_name = get_research_name,
     get_icons = function(axis)
-        return sprite_add_icon("__base__/graphics/technology/robotics.png", axis_overlay[axis])
+        return Sprites.add_icon("__base__/graphics/technology/robotics.png", axis_overlay[axis])
     end,
     get_prerequisites = get_research_prerequisites,
     get_effects = function(upgrade_type)

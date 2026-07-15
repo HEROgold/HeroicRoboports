@@ -1,6 +1,6 @@
 require("__heroic-library__.utilities")
 require("__heroic-library__.table")
-require("__heroic-library__.sprites")
+local Sprites = require("__heroic-library__.sprites")
 local Tech = require("__heroic-library__.technology")
 local settings = require("settings")
 local Limits = require("limits")
@@ -37,7 +37,7 @@ local function get_research_prerequisites(module_type, level)
 end
 
 local get_tech_sprite = function(module_type, level)
-    return sprite_add_icon(
+    return Sprites.add_icon(
         "__base__/graphics/technology/robotics.png",
         "__base__/graphics/icons/" .. module_type .. "-module-3.png"
     )

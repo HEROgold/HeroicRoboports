@@ -67,6 +67,13 @@ function EnergyRoboport:_apply_energy()
     local count = #self.charging_offsets
     self.charging_offsets = offsets.generate_charging_offsets(count + (count * productivity))
 
+    -- Quality increases the number of simultaneous charging spots on top of the productivity
+    -- scaling above, via the vanilla quality prototype's logistic_cell_charging_station_count_bonus.
+    -- This is the ONLY roboport property Factorio 2.1 lets scale with quality; area, slot counts,
+    -- and the internal energy buffer have no native quality support, so those parts of the request
+    -- cannot be honored on a roboport prototype (see docs/quality-scaling.md).
+    self.charging_station_count_affected_by_quality = true
+
     self.energy_source = {
         type = "electric",
         usage_priority = "secondary-input",

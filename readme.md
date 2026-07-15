@@ -8,6 +8,9 @@ Ths mod adds upgrades to roboports, similar to the module's found in the game.
 
 Has support for Space-Exploration and Module-T4 mods.
 
+For how quality interacts with these roboports (and which quality-scaling requests are not
+possible in Factorio 2.1), see [docs/quality-scaling.md](docs/quality-scaling.md).
+
 ## Commands
 
 ### /hr-uninstall

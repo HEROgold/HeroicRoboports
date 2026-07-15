@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.7.1
+Date: 2026-07-15
+  Changes:
+    - Charging-pad offsets now use the shared heroic-library Offsets.ring generator (requires
+      heroic-library >= 2.1.0). Output is identical; no gameplay changes.
+---------------------------------------------------------------------------------------------------
 Version: 2.7.0
 Date: 2026-07-05
   Changes:

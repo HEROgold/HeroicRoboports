@@ -1,4 +1,4 @@
-require("__heroic-library__.sprites")
+local Sprites = require("__heroic-library__.sprites")
 
 ---@class BaseRoboport: data.RoboportPrototype
 ---@field _name string Internal name for the roboport.
@@ -22,7 +22,7 @@ local icons_cache = {}
 ---@return data.IconData[]
 local function build_icons(overlay)
     if not icons_cache[overlay] then
-        icons_cache[overlay] = sprite_add_icon(
+        icons_cache[overlay] = Sprites.add_icon(
             "__base__/graphics/icons/roboport.png",
             overlay,
             { base_size = 64, base_mipmaps = 4, overlay_size = 64, overlay_mipmaps = 4, scale = 0.5, shift = { 8, 8 } }
