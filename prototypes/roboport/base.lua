@@ -1,4 +1,8 @@
 local Sprites = require("__heroic-library__.sprites")
+local Energy = require("__heroic-library__.energy")
+
+-- Input flow headroom over the full charging draw, so a roboport with every pad busy still refills.
+local INPUT_FLOW_HEADROOM = 1.1
 
 ---@class BaseRoboport: data.RoboportPrototype
 ---@field _name string Internal name for the roboport.
@@ -47,6 +51,22 @@ function BaseRoboport.new()
     -- This is the only roboport property Factorio 2.1 lets scale with quality (docs/quality-scaling.md).
     self.charging_station_count_affected_by_quality = true
     return setmetatable(self, BaseRoboport)
+end
+
+--- Input flow that feeds every pad charging at once plus idle drain, with a little headroom, and
+--- never below the vanilla roboport's. Without it a busy roboport drains to 0 and stops charging
+--- until it refills to `recharge_minimum`. Call after `charging_energy`, `charging_offsets` and
+--- `energy_usage` are final. Quality pads are not covered: input_flow_limit has no quality scaling.
+---@return Energy
+function BaseRoboport:charging_input_flow()
+    local demand = Energy.new(self.charging_energy):with_scale(#self.charging_offsets)
+    demand:add(Energy.new(self.energy_usage))
+    demand = demand:with_scale(INPUT_FLOW_HEADROOM)
+    local vanilla = Energy.new(template.energy_source.input_flow_limit)
+    if vanilla:_to_joules() > demand:_to_joules() then
+        return vanilla
+    end
+    return demand
 end
 
 ---@abstract

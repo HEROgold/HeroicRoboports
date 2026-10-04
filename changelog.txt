@@ -8,12 +8,18 @@ Date: 2026-10-01
     - Energy roboports have 4 robot slots (was 0). Idle robots rest and recharge there instead of
       queueing at the single pad of logistical roboports.
     - Logistical roboports gain charging pads from quality.
+    - Roboports restart after running out of power at 30MJ for energy roboports and 50MJ for
+      logistical roboports (vanilla 40MJ). Removed the Recharge Minimum Modifier setting.
+    - Roboport input flow covers all charging pads at once, plus 10% headroom. Energy roboports
+      keep the efficiency bonus on top.
     - Research levels default to 6 per axis (was 9). The hard limit is 12. Changed settings are
       kept.
   Changes:
     - Logistical levels that need the same science packs are one multi-level technology.
       Research cost per level is unchanged.
   Bugfixes:
+    - Fixed robots piling up at logistical roboports when the network is overloaded. Busy energy
+      roboports ran out of power and stayed off until they recharged.
     - Fixed robots and repair packs being deleted when a roboport is replaced by hr-uninstall,
       hr-reset, or a research upgrade. Items that no longer fit are spilled and marked for
       deconstruction.

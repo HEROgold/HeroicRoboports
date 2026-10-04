@@ -19,9 +19,6 @@ input_flow_limit_modifier = startup:default("input-flow-limit-modifier", 1.0, {
 buffer_capacity_modifier = startup:default("buffer-capacity-modifier", 1.0, {
     minimum = 0.1,
 })
-recharge_minimum_modifier = startup:default("recharge-minimum-modifier", 1.0, {
-    minimum = 0.1,
-})
 energy_usage_modifier = startup:default("energy-usage-modifier", 1.0, {
     minimum = 0.1,
 })
@@ -125,7 +122,6 @@ return {
 
     input_flow_limit_modifier = input_flow_limit_modifier,
     buffer_capacity_modifier = buffer_capacity_modifier,
-    recharge_minimum_modifier = recharge_minimum_modifier,
     energy_usage_modifier = energy_usage_modifier,
     charging_energy_modifier = charging_energy_modifier,
     energy_speed_limit = energy_speed_limit,

@@ -58,8 +58,9 @@ function LogisticalRoboport:get_suffix()
 end
 
 function LogisticalRoboport:_apply_energy()
-    -- Nerf energy usage as tradeoff. Half as effective at charging than the normal roboport.
-    self.recharge_minimum = tostring(Energy.new(self.recharge_minimum))
+    -- Restarts after a blackout later than vanilla (40MJ) and energy roboports (30MJ), so robots
+    -- don't fall back to the single pad here when the network is overloaded.
+    self.recharge_minimum = "50MJ"
     self.energy_usage = tostring(Energy.new(self.energy_usage))
 
     -- Lower amount of simultaneously charging robots discourages them from going here.
@@ -67,6 +68,13 @@ function LogisticalRoboport:_apply_energy()
     local charging_energy = Energy.new(self.charging_energy)
     self.charging_energy = tostring(charging_energy:with_scale(#self.charging_offsets))
     self.charging_offsets = offsets.generate_charging_offsets(1)
+
+    self.energy_source = {
+        type = "electric",
+        usage_priority = "secondary-input",
+        input_flow_limit = tostring(self:charging_input_flow()),
+        buffer_capacity = self.energy_source.buffer_capacity,
+    }
 end
 
 local function create_bases()

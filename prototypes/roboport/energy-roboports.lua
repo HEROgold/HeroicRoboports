@@ -55,9 +55,10 @@ function EnergyRoboport:_apply_energy()
     local productivity = self.levels:get("productivity")
     local speed = self.levels:get("speed")
 
+    -- Restarts after a blackout sooner than vanilla (40MJ) and logistical (50MJ), so robots keep
+    -- charging here when the network is overloaded.
+    self.recharge_minimum = "30MJ"
     -- "Base + Base * level * modifier" via Energy:scaled.
-    self.recharge_minimum =
-        tostring(Energy.new(self.recharge_minimum):scaled(efficiency, settings.recharge_minimum_modifier:get()))
     self.energy_usage =
         tostring(Energy.new(self.energy_usage):scaled(efficiency, settings.energy_usage_modifier:get()))
     self.charging_energy =
@@ -67,12 +68,16 @@ function EnergyRoboport:_apply_energy()
     local count = #self.charging_offsets + settings.energy_pads_per_productivity:get() * productivity
     self.charging_offsets = offsets.generate_charging_offsets(count)
 
+    -- Efficiency adds the same refill speed per level as before, on top of what the pads draw.
+    local input_flow_limit = self:charging_input_flow()
+    input_flow_limit:add(
+        Energy.new(self.energy_source.input_flow_limit):with_scale(efficiency * settings.input_flow_limit_modifier:get())
+    )
+
     self.energy_source = {
         type = "electric",
         usage_priority = "secondary-input",
-        input_flow_limit = tostring(
-            Energy.new(self.energy_source.input_flow_limit):scaled(efficiency, settings.input_flow_limit_modifier:get())
-        ),
+        input_flow_limit = tostring(input_flow_limit),
         buffer_capacity = tostring(
             Energy.new(self.energy_source.buffer_capacity):scaled(efficiency, settings.buffer_capacity_modifier:get())
         ),
