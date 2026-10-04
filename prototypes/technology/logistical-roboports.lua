@@ -108,15 +108,15 @@ local function science_ladder(upgrade_name, level)
     return packs
 end
 
+--- Prerequisites of the technology that starts at `level`. `previous` is the technology holding
+--- the level before it (nil at level 1, where logistic-robotics is the anchor).
+---@param upgrade_name string
+---@param level integer
+---@param previous string|nil
 ---@return table<TechnologyID>
-local function get_research_prerequisites(upgrade_name, level)
+local function get_research_prerequisites(upgrade_name, level, previous)
     ---@type table<TechnologyID>
-    local prerequisites = {}
-    if level == 1 then
-        prerequisites[#prerequisites + 1] = "logistic-robotics"
-    else
-        prerequisites[#prerequisites + 1] = get_research_name(upgrade_name, level - 1)
-    end
+    local prerequisites = { previous or "logistic-robotics" }
 
     -- A pack can only be a prerequisite if a same-named technology exists to unlock it.
     local techs = data.raw["technology"] or {}
@@ -128,26 +128,47 @@ local function get_research_prerequisites(upgrade_name, level)
     return prerequisites
 end
 
-local function get_research_ingredients(upgrade_type, level)
-    -- Inherit the base packs from the prerequisite chain (the previous tier, or logistic-robotics
-    -- at tier 1), falling back to automation/logistic if nothing contributes.
-    local prerequisites = get_research_prerequisites(upgrade_type, level)
+---@param upgrade_name string
+---@param level integer
+---@param previous string|nil
+local function get_research_ingredients(upgrade_name, level, previous)
+    -- Inherit the base packs from the prerequisite chain (the previous technology, or
+    -- logistic-robotics at level 1), falling back to automation/logistic if nothing contributes.
+    local prerequisites = get_research_prerequisites(upgrade_name, level, previous)
     local ingredients = Tech.combined_ingredients(prerequisites, {
         { "automation-science-pack", 1 },
         { "logistic-science-pack", 1 },
     })
 
-    -- On top of the inherited base, require every gating pack this tier introduces (known packs
-    -- always have a same-named tech; other-mod packs come from the tool pool). This is the science
-    -- ladder machinery that keeps the ingredients in sync with the prerequisite gates for late levels.
+    -- On top of the inherited base, require every gating pack this level introduces (known packs
+    -- always have a same-named tech; other-mod packs come from the tool pool).
     local techs = data.raw["technology"] or {}
     local tools = data.raw["tool"] or {}
-    for _, pack in ipairs(science_ladder(upgrade_type, level)) do
+    for _, pack in ipairs(science_ladder(upgrade_name, level)) do
         if techs[pack] or tools[pack] then
             ingredients[#ingredients + 1] = { pack, 1 }
         end
     end
     return table.unique_kv(ingredients)
+end
+
+--- Split levels 1..limit into runs that share the same science packs. Each run becomes one
+--- technology: a single level, or a multi-level technology (max_level) when the run is longer.
+--- The ladder is cumulative, so two levels need the same packs exactly when their counts match.
+---@param upgrade_name string
+---@param limit integer
+---@return { first: integer, last: integer }[]
+local function level_runs(upgrade_name, limit)
+    local runs = {}
+    for level = 1, limit do
+        local run = runs[#runs]
+        if run and #science_ladder(upgrade_name, level) == #science_ladder(upgrade_name, run.first) then
+            run.last = level
+        else
+            runs[#runs + 1] = { first = level, last = level }
+        end
+    end
+    return runs
 end
 
 local function get_research_limit(upgrade_type)
@@ -156,6 +177,8 @@ local function get_research_limit(upgrade_type)
 end
 
 -- count = cost * (1 + level * multiplier); multiplier is a startup setting (default 2).
+-- In a multi-level technology L is the level being researched, so the curve matches the old
+-- one-technology-per-level ladder.
 local function get_count_formula()
     return settings.research_upgrade_cost:get() .. "*(1 + L*" .. settings.research_cost_multiplier:get() .. ")"
 end
@@ -171,28 +194,71 @@ local axis_overlay = {
 
 Tech.unlock_recipe("logistic-robotics", "logistical-roboport")
 
-Tech.add_upgrade_ladder({
-    axes = {
-        "roboport-construction-area",
-        "roboport-logistic-area",
-        "roboport-robot-storage",
-        "roboport-material-storage",
-    },
-    get_limit = get_research_limit,
-    get_name = get_research_name,
-    get_icons = function(axis)
-        return Sprites.add_icon("__base__/graphics/technology/robotics.png", axis_overlay[axis])
-    end,
-    get_prerequisites = get_research_prerequisites,
-    get_effects = function(upgrade_type)
-        return {
+for _, axis in ipairs(codec.LOGISTICAL_AXES) do
+    local upgrade_name = axis.tech
+    local icons = Sprites.add_icon("__base__/graphics/technology/robotics.png", axis_overlay[upgrade_name])
+    local used = {}
+    local previous = nil
+    for _, run in ipairs(level_runs(upgrade_name, get_research_limit(upgrade_name))) do
+        local multi_level = run.last > run.first
+        local name = multi_level and codec.multi_level_tech(upgrade_name, run.first)
+            or get_research_name(upgrade_name, run.first)
+        data:extend({
             {
-                type = "nothing",
-                effect_description = { "heroic-roboports-effect.logistical", upgrade_type },
+                type = "technology",
+                name = name,
+                localised_name = { "technology-name." .. upgrade_name },
+                localised_description = { "technology-description." .. upgrade_name },
+                icon_size = 256,
+                icon_mipmaps = 4,
+                icons = icons,
+                upgrade = true,
+                order = "c-k-f-a",
+                max_level = multi_level and run.last or nil,
+                prerequisites = get_research_prerequisites(upgrade_name, run.first, previous),
+                effects = {
+                    {
+                        type = "nothing",
+                        effect_description = { "heroic-roboports-effect.logistical", upgrade_name },
+                    },
+                },
+                unit = {
+                    count_formula = get_count_formula(),
+                    time = settings.research_upgrade_time:get(),
+                    ingredients = get_research_ingredients(upgrade_name, run.first, previous),
+                },
             },
-        }
-    end,
-    get_count_formula = get_count_formula,
-    get_time = function() return settings.research_upgrade_time:get() end,
-    get_ingredients = get_research_ingredients,
-})
+        })
+        used[name] = true
+        previous = name
+    end
+
+    -- Before 2.8.0 every level was its own technology. Keep the per-level names no longer in use
+    -- as hidden, disabled stubs so Factorio keeps their researched state in old saves; the 2.8.0
+    -- migration reads them to restore each force's level. helpers/levels.lua skips hidden
+    -- technologies. Multi-level technologies use a separate base name (codec.multi_level_tech),
+    -- so these stubs never overlap their level range.
+    for level = 2, settings.MAX_RESEARCH_LEVEL do
+        local name = get_research_name(upgrade_name, level)
+        if not used[name] then
+            data:extend({
+                {
+                    type = "technology",
+                    name = name,
+                    icon_size = 256,
+                    icon_mipmaps = 4,
+                    icons = icons,
+                    hidden = true,
+                    enabled = false,
+                    visible_when_disabled = false,
+                    effects = {},
+                    unit = {
+                        count = 1,
+                        time = 1,
+                        ingredients = { { "automation-science-pack", 1 } },
+                    },
+                },
+            })
+        end
+    end
+end

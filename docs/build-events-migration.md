@@ -1,25 +1,23 @@
-# Migration: adopt `heroic-library` `build_events`
+# Follow-up: move build wiring to heroic-library `build_events`
 
-HeroicLibrary 2.1.0 adds a `build_events` module that encapsulates the build/removal event wiring
-this mod currently hand-rolls in [`script/control.lua`](../script/control.lua) (the `built_events` /
-`removed_events` lists, the per-event filtered `script.on_event` loops, and the separate
-`on_entity_cloned` registration). Moving onto it removes ~40 lines of boilerplate and gives us the
-Space-Age feature-detection and ghost/real routing for free.
+Status: not applied. [`script/control.lua`](../script/control.lua) still registers build and
+removal events by hand. The library's `build_events` module (heroic-library 2.1.0, already the
+floor in [`info.json`](../info.json)) does the same work: it builds the event list, adds the Space
+Age `on_space_platform_built_entity` event when it exists, applies the `type` and `ghost_type`
+filters, wires `on_entity_cloned`, and routes ghosts and real entities to separate callbacks.
 
-**This is a documented follow-up, not yet applied.** It is a `heroic-library` behavior swap gated by
-`factoriomods-change-control`: bump the floor and retest the full roboport upgrade flow in-game
-before shipping.
+This is a gated control-stage change. Follow `factoriomods-change-control` and finish with the
+in-game test in step 3.
 
 ## Steps
 
-1. **Raise the library floor.** In [`info.json`](../info.json) change
-   `"heroic-library >= 2.0.0"` → `"heroic-library >= 2.1.0"`.
+1. In `script/control.lua`, delete the `built_filter`, `roboport_filter`, `built_events` and
+   `removed_events` locals, the two `for _, ev in ipairs(...)` registration loops, and the
+   `on_entity_cloned` registration. Done when no `script.on_event` call for a build or removal
+   event remains.
 
-2. **Replace the wiring in `script/control.lua`.** Delete the `built_filter` / `roboport_filter` /
-   `built_events` / `removed_events` locals and the three registration loops
-   (`for _, ev in ipairs(built_events) ...`, the `on_entity_cloned` call, and
-   `for _, ev in ipairs(removed_events) ...`). Keep `handle_built` and `handle_removed`, but have
-   them take the raw entity that `build_events` passes:
+2. Register through the library. The callbacks receive the raw `LuaEntity`, so the ghost check in
+   `handle_built` goes away:
 
    ```lua
    local BuildEvents = require("__heroic-library__.build_events")
@@ -45,21 +43,9 @@ before shipping.
    })
    ```
 
-   `build_events` already: assembles the build list incl. the Space-Age-guarded
-   `on_space_platform_built_entity`; applies the `type` + `ghost_type` filter per event; wires
-   `on_entity_cloned` (via `include_clone`); and routes ghosts vs real entities to the two callbacks
-   using `Entity.from_event` + `:is_ghost()`. So the manual ghost check in the old `handle_built` is
-   no longer needed.
+   Leave the lifecycle handlers, the research handlers and the runtime-setting handler as they are.
 
-3. **Leave the rest of `control.lua` unchanged** — the lifecycle (`on_init`/`on_load`/
-   `on_configuration_changed`), the research handlers (`on_research_finished`/`_reversed`), and the
-   `on_runtime_mod_setting_changed` re-register are unrelated to build wiring.
-
-4. **Retest in-game** (per change-control): manual build, robot build, blueprint paste (ghost →
-   resolve), space-platform build, mining/removal, and a research level-up still upgrade/track/untrack
-   roboports correctly, with no desync in multiplayer.
-
-## Note
-
-`Entity:replace` in 2.1.0 also now preserves `direction`. Roboports are directionless, so this is a
-no-op for this mod — but confirm nothing regresses during the retest above.
+3. Test in-game. Done when each of these still tracks, upgrades or untracks the roboport: a
+   manual build, a robot build, a blueprint paste (the ghost resolves to the base roboport), a
+   space platform build, mining, and a research level-up. Run one multiplayer session and check
+   that it doesn't desync.

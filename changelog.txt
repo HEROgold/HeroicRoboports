@@ -1,15 +1,38 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.8.0
+Date: 2026-10-01
+  Features:
+    - Added a setting for charging pads per Roboport Productivity level (default 4).
+    - Added an energy research cost multiplier setting (default 1).
+  Balancing:
+    - Energy roboports have 4 robot slots (was 0). Idle robots rest and recharge there instead of
+      queueing at the single pad of logistical roboports.
+    - Logistical roboports gain charging pads from quality.
+    - Research levels default to 6 per axis (was 9). The hard limit is 12. Changed settings are
+      kept.
+  Changes:
+    - Logistical levels that need the same science packs are one multi-level technology.
+      Research cost per level is unchanged.
+  Bugfixes:
+    - Fixed robots and repair packs being deleted when a roboport is replaced by hr-uninstall,
+      hr-reset, or a research upgrade. Items that no longer fit are spilled and marked for
+      deconstruction.
+  Info:
+    - Existing research carries over. Roboports above the new limit drop to it. Robots and repair
+      packs that no longer fit are spilled and marked for deconstruction. To keep levels 7 to 9, set
+      Research Maximum and every per-axis limit to 9 before loading your save.
+---------------------------------------------------------------------------------------------------
 Version: 2.7.1
 Date: 2026-07-15
   Changes:
-    - Charging-pad offsets now use the shared heroic-library Offsets.ring generator (requires
-      heroic-library >= 2.1.0). Output is identical; no gameplay changes.
+    - Recipes use 25 electronic circuits instead of 100 steel plates. Energy roboports also need
+      75 batteries, logistical roboports 1 storage chest.
+    - Requires heroic-library 2.1.0.
 ---------------------------------------------------------------------------------------------------
 Version: 2.7.0
 Date: 2026-07-05
   Changes:
-    - Migrated to the heroic-library 2.0.0 Entity class (the entities module was removed from the
-      library). No gameplay changes; requires heroic-library >= 2.0.0.
+    - Requires heroic-library 2.0.0. No gameplay changes.
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.0
 Date: 2026-07-02

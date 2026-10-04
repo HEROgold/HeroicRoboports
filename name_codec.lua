@@ -79,8 +79,19 @@ function NameCodec:levels_from_name(name)
     return out
 end
 
+---Name of the multi-level logistical technology whose first level is `first`. It must not share a
+---base name with the per-level technologies: Factorio reads a trailing "-N" as a level, so a
+---multi-level "roboport-robot-storage-3" would overlap the pre-2.8.0 stubs "-4", "-5", ...
+---@param base string Axis technology base name.
+---@param first integer
+---@return string
+local function multi_level_tech(base, first)
+    return base .. "-levels-" .. first
+end
+
 return {
     NameCodec = NameCodec,
+    multi_level_tech = multi_level_tech,
     ENERGY_AXES = ENERGY_AXES,
     LOGISTICAL_AXES = LOGISTICAL_AXES,
     energy = NameCodec.new("energy-roboport-mk-", ENERGY_AXES),

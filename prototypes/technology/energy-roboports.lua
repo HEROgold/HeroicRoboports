@@ -74,7 +74,10 @@ Tech.add_upgrade_ladder({
             },
         }
     end,
-    get_count_formula = function() return settings.research_upgrade_cost:get() .. "*(L)" end,
+    -- count = cost * L * multiplier; multiplier is a startup setting (default 1).
+    get_count_formula = function()
+        return settings.research_upgrade_cost:get() .. "*L*" .. settings.energy_research_cost_multiplier:get()
+    end,
     get_time = function() return settings.research_upgrade_time:get() end,
     get_ingredients = get_module_research_ingredients,
 })

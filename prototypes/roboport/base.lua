@@ -43,6 +43,9 @@ function BaseRoboport.new()
     -- `minable.result` is the only subtable mutated in place by subclasses, so give each variant
     -- its own copy; everything else the subclasses set is a top-level reassignment.
     self.minable = table.deepcopy(template.minable)
+    -- Quality adds charging pads via the vanilla QualityPrototype::logistic_cell_charging_station_count_bonus.
+    -- This is the only roboport property Factorio 2.1 lets scale with quality (docs/quality-scaling.md).
+    self.charging_station_count_affected_by_quality = true
     return setmetatable(self, BaseRoboport)
 end
 

@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -7,18 +6,12 @@ from zipfile import ZipFile
 ROOT = Path(__file__).parent
 RELEASE = ROOT / "releases"
 INFO= ROOT / "info.json"
-DATA = (
-    ROOT / "data.lua",
-    ROOT / "data-updates.lua",
-    ROOT / "data-final-fixes.lua",
-)
 CHANGELOG = ROOT / "changelog.txt"
-SETTINGS = ROOT / "settings.lua"
-CONTROL = ROOT / "control.lua"
+THUMBNAIL = ROOT / "thumbnail.png"
 
 dirs: list[Path] = []
 for i in ROOT.iterdir():
-    if not i.is_dir() or i == RELEASE or i.name.startswith("."):
+    if not i.is_dir() or i == RELEASE or i.name.startswith((".", "__")):
         continue
     dirs.append(i)
 
@@ -35,9 +28,11 @@ def main() -> Path:
 
     zip_file = RELEASE / f"{mod_name}_{version}.zip"
     with ZipFile(zip_file, "w") as f:
-        for i in (INFO, CHANGELOG, *DATA, SETTINGS, CONTROL, *files):
-            if not i.exists(): continue
-            f.write(os.path.relpath(i))
+        # Root .lua files cover data/settings/control plus shared modules such as limits.lua.
+        for i in (INFO, CHANGELOG, THUMBNAIL, *sorted(ROOT.glob("*.lua")), *files):
+            if not i.exists() or "__pycache__" in i.parts: continue
+            # Factorio requires every file under a single top-level folder named after the mod.
+            f.write(i, f"{mod_name}/{i.relative_to(ROOT).as_posix()}")
     print(f"Created release {mod_name}{version}")
     return zip_file
 

@@ -110,5 +110,24 @@ local function create_variants()
     return to_add
 end
 
+--- Holding prototype for the 2.8.0 migration. Saves from before 2.8.0 can hold variants above the
+--- current level limit; migrations/heroic-roboports_2.8.0.json renames those to this entity. Its
+--- slot counts fit any old level, so the engine deletes nothing on load. The control-stage upgrade
+--- queue then swaps it for the force's current variant via Upgrader.replace, which spills what no
+--- longer fits and marks it for deconstruction.
+local function create_legacy()
+    local entity = LogisticalRoboport.new()
+    entity.name = "logistical-roboport-legacy"
+    entity.localised_name = { "entity-name.logistical-roboport" }
+    entity.hidden = true
+    entity.hidden_in_factoriopedia = true
+    entity.robot_slots_count = settings.logistical_robot_slots:get()
+        + settings.logistical_robot_modifier:get() * settings.MAX_RESEARCH_LEVEL
+    entity.material_slots_count = settings.logistical_material_slots:get()
+        + settings.logistical_material_modifier:get() * settings.MAX_RESEARCH_LEVEL
+    return { entity }
+end
+
 data:extend(create_bases())
 data:extend(create_variants())
+data:extend(create_legacy())

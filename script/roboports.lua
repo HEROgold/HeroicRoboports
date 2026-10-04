@@ -112,9 +112,8 @@ end
 function M.uninstall()
     for _, surface in pairs(game.surfaces) do
         for _, entity in pairs(surface.find_entities_filtered({ type = "roboport" })) do
-            local e = Entity.new(entity)
-            if e and e:is_valid() and is_mod_roboport(entity) then
-                e:replace("roboport")
+            if entity.valid and is_mod_roboport(entity) then
+                Upgrader.replace(entity, "roboport")
             end
         end
     end
@@ -129,13 +128,12 @@ function M.reset_entities()
     storage.roboport_upgrade_queue = {}
     for _, surface in pairs(game.surfaces) do
         for _, entity in pairs(surface.find_entities_filtered({ type = "roboport" })) do
-            local e = Entity.new(entity)
-            if e and e:is_valid() and is_mod_roboport(entity) then
+            if entity.valid and is_mod_roboport(entity) then
                 local family = Upgrader.family_for(entity.name)
                 local base = family == "energy" and "energy-roboport" or "logistical-roboport"
-                local created = e:replace(base)
+                local created = Upgrader.replace(entity, base)
                 if created then
-                    M.registry:add(created:unwrap())
+                    M.registry:add(created)
                 end
             end
         end

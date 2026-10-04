@@ -4,7 +4,7 @@ local modules = require("__heroic-library__.modules")
 local codec = require("name_codec")
 
 --- Computes the per-axis level limits for both roboport families. These drive BOTH how many
---- research technologies are generated and how many entity variants are pre-generated, so the
+--- research levels are generated and how many entity variants are pre-generated, so the
 --- two always match.
 ---
 --- research_minimum / research_maximum act as clamps on the number of levels per axis:
@@ -13,8 +13,8 @@ local codec = require("name_codec")
 --- - Remove all modules  -> detected 0 -> clamps up to research_minimum.
 --- - A mod adds 9 tiers  -> up to research_maximum (or the per-axis setting cap).
 
-local research_minimum = settings.research_minimum:get()
 local research_maximum = settings.research_maximum:get()
+local research_minimum = math.min(settings.research_minimum:get(), research_maximum)
 
 -- Energy axes follow module tiers (per line), independently per axis.
 local detected = modules.max_tiers({ "efficiency", "productivity", "speed" })
@@ -41,7 +41,7 @@ local logistical_caps = {
 
 local logistical = {}
 for _, axis in ipairs(codec.LOGISTICAL_AXES) do
-    logistical[axis.key] = math.max(research_minimum, math.min(logistical_caps[axis.key], research_maximum))
+    logistical[axis.key] = number.within_bounds(logistical_caps[axis.key], research_minimum, research_maximum)
 end
 
 ---@class RoboportLimits

@@ -1,4 +1,3 @@
-local tech = require("__heroic-library__.technology")
 local levels = require("helpers.levels")
 local roboports = require("script.roboports")
 local codec = require("name_codec")
@@ -28,16 +27,10 @@ commands.add_command("hr-reset", "Resets all roboports to level 0 and unresearch
     game.print("Resetting mod")
     for _, force in pairs(game.forces) do
         for _, axis in ipairs(codec.ENERGY_AXES) do
-            local root = force.technologies[axis.tech]
-            if root then
-                tech.recursive_unresearch_technology(root)
-            end
+            levels.set(force, axis.tech, 0)
         end
         for _, axis in ipairs(codec.LOGISTICAL_AXES) do
-            local root = force.technologies[axis.tech]
-            if root then
-                tech.recursive_unresearch_technology(root)
-            end
+            levels.set(force, axis.tech, 0)
         end
     end
     roboports.reset_entities()
