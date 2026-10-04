@@ -4,25 +4,22 @@ Date: 2026-10-01
   Features:
     - Added a setting for charging pads per Roboport Productivity level (default 4).
     - Added an energy research cost multiplier setting (default 1).
-  Balancing:
-    - Energy roboports have 4 robot slots (was 0). Idle robots rest and recharge there instead of
-      queueing at the single pad of logistical roboports.
-    - Logistical roboports gain charging pads from quality.
-    - Roboports restart after running out of power at 30MJ for energy roboports and 50MJ for
-      logistical roboports (vanilla 40MJ). Removed the Recharge Minimum Modifier setting.
-    - Roboport input flow covers all charging pads at once, plus 10% headroom. Energy roboports
-      keep the efficiency bonus on top.
-    - Research levels default to 6 per axis (was 9). The hard limit is 12. Changed settings are
-      kept.
   Changes:
-    - Logistical levels that need the same science packs are one multi-level technology.
+    - Energy roboports have 4 robot slots (was 0).
+    - Idle robots rest and recharge there instead of queueing at the single pad of logistical roboports.
+    - Roboports gain charging pads from quality.
+    - Roboports restart after running out of power at 30MJ for energy roboports
+      and 50MJ for logistical roboports (vanilla 40MJ). Removed the Recharge Minimum Modifier setting.
+    - Fixed Roboport input flow being too low in certain cases.
+    - Research levels default to 6 per (was 9). The hard limit is 12. Changed settings are kept.
+    - Technology levels that need the same science packs are one multi-level technology.
       Research cost per level is unchanged.
   Bugfixes:
-    - Fixed robots piling up at logistical roboports when the network is overloaded. Busy energy
-      roboports ran out of power and stayed off until they recharged.
-    - Fixed robots and repair packs being deleted when a roboport is replaced by hr-uninstall,
-      hr-reset, or a research upgrade. Items that no longer fit are spilled and marked for
-      deconstruction.
+    - Fixed robots piling up at logistical roboports when the network is overloaded.
+      Busy energy roboports ran out of power and stayed off until they recharged.
+    - Fixed robots and repair packs being deleted when a roboport is replaced by
+      hr-uninstall, hr-reset, or a research upgrade. Items that no longer fit are spilled
+      and marked for deconstruction.
   Info:
     - Existing research carries over. Roboports above the new limit drop to it. Robots and repair
       packs that no longer fit are spilled and marked for deconstruction. To keep levels 7 to 9, set
@@ -38,7 +35,8 @@ Date: 2026-07-15
 Version: 2.7.0
 Date: 2026-07-05
   Changes:
-    - Requires heroic-library 2.0.0. No gameplay changes.
+    - Requires heroic-library 2.0.0. 
+    - Internal code changes.
 ---------------------------------------------------------------------------------------------------
 Version: 2.6.0
 Date: 2026-07-02
